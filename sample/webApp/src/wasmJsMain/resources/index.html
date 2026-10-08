@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Retake Web</title>
+    <link type="text/css" rel="stylesheet" href="styles.css">
+</head>
+<body>
+<main>
+    <h1>Retake</h1>
+    <p id="platform" class="muted"></p>
+    <div id="examples" class="thumbs"></div>
+    <label class="chip pick">Check your own photo<input id="file" type="file" accept="image/*" hidden></label>
+    <div class="layout">
+        <img id="photo" alt="">
+        <section class="card">
+            <div id="verdict" class="verdict"></div>
+            <div id="hints"></div>
+            <div id="bars"></div>
+            <p id="timing" class="muted small"></p>
+        </section>
+    </div>
+    <p class="muted small">blur · dark · bright · glare · noise · finger · runs on this device · no network, no permission</p>
+    <p id="load" class="muted small"></p>
+</main>
+<canvas id="work" hidden></canvas>
+<script type="application/javascript" src="webApp.js"></script>
+</body>
+</html>

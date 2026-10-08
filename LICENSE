@@ -1,0 +1,156 @@
+HOVERFLY COMMUNITY LICENSE
+Version 1.0, 24 September 2026
+
+Copyright (c) 2026 Hoverfly. All rights reserved.
+
+This license applies to every version of Retake.
+
+Commercial licenses and custom models:
+  Email:     raju348636@gmail.com
+  Phone:     +91 63533 21951 (call or WhatsApp)
+
+
+In short (this summary is not part of the license):
+
+  - Free, including commercial use, for any product with up to 10,000 monthly active
+    devices per platform. No API key, no sign-up and no license file are needed.
+  - Above 10,000 monthly active devices, the product needs a commercial license from Hoverfly.
+  - You may not resell the library or the model, extract, modify or fine-tune the model
+    weights, or use the model or its outputs to train or distill another model.
+
+
+1. DEFINITIONS
+
+"Software" means Retake: its source code, compiled libraries (AAR, JAR), documentation,
+and the bundled model, which includes the model weights, tokenizer, vocabularies, label and
+text lists, and the file formats that store them (together, the "Model").
+
+"Licensor" or "Hoverfly" means the copyright holder of the Software.
+
+"You" means the person or legal entity that uses the Software.
+
+"Product" means an application, website, service or device that You build, publish or
+operate and that includes or uses the Software. Versions and editions of the same
+application offered under the same name count as one Product.
+
+"Platform" means an operating environment on which a Product runs, such as Android, iOS,
+the web, desktop or an embedded device.
+
+"Monthly Active Devices" means the number of distinct devices on which a Product runs the
+Software at least once during a calendar month, counted separately for each Product and
+each Platform. How often the Software runs on a device does not matter.
+
+
+2. FREE COMMUNITY LICENSE
+
+Subject to the terms of this license, Hoverfly grants You a worldwide, non-exclusive,
+non-transferable, non-sublicensable, royalty-free license to:
+
+  (a) use, copy and run the Software; and
+  (b) distribute the Software in compiled form as part of Your Product, including in a
+      commercial Product,
+
+provided that no Product of Yours exceeds 10,000 Monthly Active Devices on any Platform.
+
+No API key, registration, license file or payment is required for this free license.
+
+You may change the Software's source code (but not the Model) to integrate it into, or fix
+problems in, Your own Product. You may not distribute modified source code on its own.
+
+
+3. COMMERCIAL LICENSE
+
+If a Product exceeds 10,000 Monthly Active Devices on any Platform, You must obtain a
+separate written commercial license from Hoverfly for that Product before continuing to
+use or distribute the Software in it. You have 30 days from the end of the first month in
+which the limit was exceeded to obtain it.
+
+A commercial license covers one Product and one Hoverfly library, unless the written
+agreement says otherwise. Contact Hoverfly at the address at the top of this license.
+
+
+4. RESTRICTIONS
+
+Under the free license and any commercial license (unless a written agreement with
+Hoverfly expressly allows it), You may not:
+
+  (a) Resale. Sell, rent, lease, sublicense or otherwise redistribute the Software or the
+      Model on its own, or as part of a library, SDK, framework, model collection or
+      developer tool whose purpose is to give others access to the Software's features.
+
+  (b) Weights. Extract, copy, export, publish or share the Model separately from Your
+      Product, or modify, fine-tune, retrain, prune, quantize, merge, convert or otherwise
+      change the Model or create a derivative of it.
+
+  (c) Distillation and training. Use the Software, the Model, or any output produced by
+      them to train, fine-tune, distill, evaluate for the purpose of replicating, or
+      otherwise improve any machine learning model, other than the Model as supplied by
+      Hoverfly.
+
+  (d) Reverse engineering. Decompile, disassemble or reverse engineer the Model, its
+      weights or its file formats, or attempt to recover how the Model was built, except
+      to the extent that applicable law expressly permits this despite this restriction.
+
+  (e) Hosted access. Offer the Software or the Model as a hosted service, API or cloud
+      endpoint that lets third parties send inputs and receive its outputs.
+
+  (f) Competing products. Use the Software or the Model to build a product that competes
+      with the Software.
+
+  (g) Notices. Remove, hide or change any copyright notice, license text or attribution in
+      the Software.
+
+  (h) Workarounds. Split a Product into several Products, or use similar arrangements, to
+      stay under the Monthly Active Devices limit.
+
+  (i) Unlawful use. Use the Software in violation of any applicable law.
+
+
+5. OWNERSHIP
+
+The Software and the Model are licensed, not sold. Hoverfly keeps all rights, title and
+interest in them, including any improvements Hoverfly makes. All rights not expressly
+granted in this license are reserved. This license does not grant any right to use the
+Hoverfly name, logos or product names, except to state truthfully that Your Product uses
+the Software.
+
+
+6. REDISTRIBUTION NOTICE
+
+When You distribute the Software as part of Your Product, it must remain subject to this
+license. You do not need to show any notice inside Your Product's user interface.
+
+
+7. TERMINATION
+
+This license ends automatically if You break any of its terms. If it is Your first breach
+and You fix it within 30 days of receiving notice from Hoverfly, the license is restored.
+When the license ends, You must stop using and distributing the Software and delete all
+copies of it, including those in Your Products' future releases. Sections 4, 5, 8, 9 and 10
+continue to apply after termination.
+
+
+8. NO WARRANTY
+
+THE SOFTWARE AND THE MODEL ARE PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, ACCURACY
+AND NON-INFRINGEMENT. Model outputs can be wrong. You are responsible for how You use them
+and for any decision made with them.
+
+
+9. LIMITATION OF LIABILITY
+
+TO THE MAXIMUM EXTENT PERMITTED BY LAW, HOVERFLY WILL NOT BE LIABLE FOR ANY DIRECT, INDIRECT,
+INCIDENTAL, SPECIAL, CONSEQUENTIAL OR EXEMPLARY DAMAGES, OR FOR ANY LOSS OF PROFITS, DATA,
+USE OR GOODWILL, ARISING FROM OR RELATED TO THE SOFTWARE OR THIS LICENSE, EVEN IF ADVISED OF
+THE POSSIBILITY OF SUCH DAMAGES.
+
+
+10. GENERAL
+
+This license is governed by the laws of India, and the courts of India have exclusive
+jurisdiction over any dispute about it. Hoverfly may publish new versions of this license
+for future releases of the Software; each release stays under the license it shipped with.
+If any provision is found unenforceable, the rest of the license remains in effect. This
+license, together with any written commercial agreement, is the entire agreement between
+You and Hoverfly about the Software.

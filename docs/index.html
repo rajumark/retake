@@ -1,0 +1,1416 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Retake — on-device photo quality checker for Kotlin Multiplatform</title>
+<meta name="description" content="Retake checks a photo on the device and says whether it is good or should be retaken, and why: blur, too dark, too bright, glare, noise or a finger over the lens. 0.5 MB, no dependencies, no network.">
+<meta name="theme-color" content="#ffffff">
+<meta name="color-scheme" content="light">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;600;700&family=Google+Sans+Code:wght@400;500&display=swap">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22><rect x=%221%22 y=%221%22 width=%2222%22 height=%2222%22 rx=%227%22 fill=%22%23073042%22/><path d=%22M7 9h2l1-2h4l1 2h2v8H7z%22 fill=%22none%22 stroke=%22%23fff%22 stroke-width=%221.8%22 stroke-linejoin=%22round%22/><circle cx=%2212%22 cy=%2213%22 r=%222.2%22 fill=%22none%22 stroke=%22%23fff%22 stroke-width=%221.8%22/></svg>">
+<style>
+  :root {
+    --bg: #ffffff;
+    --bg-subtle: #f1f3f4;
+    --text: #202124;
+    --text-strong: #000000;
+    --text-secondary: #5f6368;
+    --border: #dadce0;
+    --accent: #073042;
+    --accent-hover: #0b4a63;
+    --green: #3ddc84;
+    --green-soft: #c4eed0;
+    --green-ink: #072711;
+    --link: #1a73e8;
+    --tonal: rgba(0, 0, 0, 0.06);
+    --tonal-hover: rgba(0, 0, 0, 0.1);
+    --code-bg: #f1f3f4;
+    --code-text: #202124;
+    --card-bg: #ffffff;
+    --nav-bg: rgba(255, 255, 255, 0.94);
+    --pill-bg: #f1f3f4;
+    --syn-comment: #8fa9b5;
+    --syn-keyword: #3ddc84;
+    --syn-string: #fdd663;
+    --syn-number: #8ab4f8;
+    --syn-function: #d7aefb;
+    --syn-type: #f6aea9;
+    --shadow: 0 1px 2px rgba(60, 64, 67, 0.3), 0 2px 6px 2px rgba(60, 64, 67, 0.15);
+    --band: transparent;
+    --band-lime: #ebf5d4;
+    --band-pink: #fae7fe;
+    --band-lavender: #eadeff;
+    --band-periwinkle: #eef0ff;
+    --band-mint: #e6f1f0;
+    --band-cream: #fff7e8;
+    --band-peach: #ffede3;
+    --band-grey: #f8f9fa;
+    --font: "Google Sans", "Google Sans Text", "Noto Sans", Roboto, -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+    --mono: "Google Sans Code", "Roboto Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Helvetica Neue", Helvetica, Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    line-height: 1.5;
+  }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { color: var(--accent-hover); }
+
+  /* Nav */
+  nav {
+    position: sticky; top: 0; z-index: 100;
+    background: var(--nav-bg);
+    backdrop-filter: saturate(180%) blur(20px);
+    -webkit-backdrop-filter: saturate(180%) blur(20px);
+    border-bottom: 1px solid var(--border);
+  }
+  .nav-inner {
+    max-width: 980px; margin: 0 auto;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 22px; height: 48px;
+    font-size: 14px;
+  }
+  .nav-brand { display: flex; align-items: center; gap: 8px; font-weight: 600; color: var(--text); }
+  .nav-links { display: flex; gap: 28px; }
+  .nav-links a { color: var(--text); font-size: 12px; opacity: 0.85; }
+  .nav-links a:hover { opacity: 1; }
+  .nav-cta {
+    font-size: 12px; padding: 6px 14px; border-radius: 980px;
+    background: var(--accent); color: #fff !important; opacity: 1 !important;
+  }
+  .nav-cta:hover { background: var(--accent-hover); }
+
+  /* Hero */
+  .hero {
+    max-width: 980px; margin: 0 auto;
+    padding: 90px 22px 60px;
+    text-align: center;
+  }
+  .hero .eyebrow {
+    font-size: 17px; font-weight: 600; color: var(--accent); margin-bottom: 8px;
+  }
+  .hero h1 {
+    font-size: clamp(40px, 7vw, 64px);
+    font-weight: 700; letter-spacing: -0.015em;
+    margin: 0 0 12px; line-height: 1.05;
+  }
+  .hero p.tagline {
+    font-size: clamp(19px, 3vw, 24px);
+    color: var(--text-secondary);
+    max-width: 640px; margin: 0 auto 32px;
+    font-weight: 400;
+  }
+  .hero-actions { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; margin-bottom: 16px; }
+  .hero-trust { font-size: 13px; color: var(--text-secondary); text-align: center; margin: 0 0 48px; }
+  .btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 11px 22px; border-radius: 980px; font-size: 15px; font-weight: 400;
+    border: 1px solid transparent; cursor: pointer;
+  }
+  .btn-primary { background: var(--accent); color: #fff !important; }
+  .btn-primary:hover { background: var(--accent-hover); }
+  .btn-secondary { background: transparent; color: var(--accent) !important; border-color: var(--accent); }
+  .btn-secondary:hover { background: var(--accent); color: #fff !important; }
+
+  .hero-demo {
+    background: var(--bg-subtle);
+    border-radius: 18px;
+    padding: 28px;
+    text-align: left;
+    max-width: 640px; margin: 0 auto;
+    border: 1px solid var(--border);
+    transition: opacity 0.35s ease;
+  }
+  .hero-demo.is-fading { opacity: 0; }
+  .sketch-demo { max-width: 720px; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 22px; align-items: center; }
+  @media (max-width: 640px) { .sketch-demo { grid-template-columns: minmax(0, 1fr); padding: 20px; } }
+  .sd-canvas { position: relative; background: var(--card-bg); border: 1px solid var(--border); border-radius: 16px; aspect-ratio: 1; }
+  .sd-canvas svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .sd-canvas path { fill: none; stroke: var(--text); stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
+  .sd-step { position: absolute; left: 14px; bottom: 10px; font-size: 12px; color: var(--text-secondary); }
+  .sd-pen { position: absolute; width: 12px; height: 12px; margin: -6px 0 0 -6px; border-radius: 50%; background: var(--accent); opacity: 0; transition: opacity .2s; pointer-events: none; }
+  .sd-side .sd-label { font-size: 13px; color: var(--accent); font-weight: 600; margin-bottom: 14px; }
+  .sd-row { display: grid; grid-template-columns: minmax(0, 1fr) 90px 40px; gap: 10px; align-items: center; margin-bottom: 12px; }
+  .sd-row .n { font-size: 16px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; transition: color .3s; }
+  .sd-row:first-child .n { font-size: 21px; font-weight: 650; }
+  .sd-row .bar { height: 8px; border-radius: 4px; background: var(--border); overflow: hidden; }
+  .sd-row .bar i { display: block; height: 100%; width: 0; background: var(--accent); border-radius: 4px; transition: width .5s ease; }
+  .sd-row .v { font-size: 12.5px; color: var(--text-secondary); text-align: right; font-variant-numeric: tabular-nums; }
+  .sd-code { margin-top: 18px; font: 13px ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--text-secondary); }
+  .hero-demo .prompt { color: var(--text-secondary); font-size: 13px; margin-bottom: 10px; }
+  .hero-demo .input-row {
+    background: var(--card-bg); border: 1px solid var(--border); border-radius: 10px;
+    padding: 10px 14px; font-size: 15px; margin-bottom: 14px;
+  }
+  .emoji-row { display: flex; gap: 10px; flex-wrap: wrap; font-size: 28px; }
+  .emoji-row span { transition: transform 0.15s; }
+
+  /* Sections */
+  section { max-width: 980px; margin: 0 auto; padding: 70px 22px; border-top: 1px solid var(--border); }
+  section:first-of-type { border-top: none; }
+  .section-head { text-align: center; margin-bottom: 44px; }
+  .section-head .kicker {
+    font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em;
+    color: var(--accent); margin-bottom: 10px;
+  }
+  .section-head h2 { font-size: clamp(30px, 4vw, 40px); font-weight: 700; letter-spacing: -0.01em; margin: 0 0 10px; }
+  .section-head p { color: var(--text-secondary); font-size: 18px; max-width: 620px; margin: 0 auto; }
+
+  /* Feature grid */
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; }
+  .card {
+    background: var(--bg-subtle); border-radius: 18px; padding: 28px;
+    border: 1px solid var(--border);
+  }
+  .card .icon { width: 30px; height: 30px; margin-bottom: 14px; color: var(--accent); display: block; }
+  .card .icon svg { display: block; width: 100%; height: 100%; }
+  .card h3 { font-size: 19px; font-weight: 600; margin: 0 0 8px; }
+  .card p { font-size: 14px; color: var(--text-secondary); margin: 0; line-height: 1.5; }
+
+  /* Code blocks */
+  pre {
+    background: var(--code-bg); color: var(--code-text);
+    border-radius: 14px; padding: 20px 22px; overflow-x: auto;
+    font-size: 13.5px; line-height: 1.6; border: 1px solid var(--border);
+    margin: 0;
+  }
+  code { font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace; }
+  .hljs-comment, .hljs-quote { color: var(--syn-comment); font-style: italic; }
+  .hljs-keyword, .hljs-selector-tag, .hljs-literal, .hljs-meta .hljs-keyword { color: var(--syn-keyword); }
+  .hljs-string, .hljs-doctag, .hljs-regexp { color: var(--syn-string); }
+  .hljs-number { color: var(--syn-number); }
+  .hljs-title, .hljs-title.function_, .hljs-title.class_ { color: var(--syn-function); }
+  .hljs-built_in, .hljs-type, .hljs-class { color: var(--syn-type); }
+  .hljs-variable, .hljs-attr, .hljs-params, .hljs-property { color: var(--code-text); }
+  .hljs-meta { color: var(--syn-comment); }
+  .code-label {
+    font-size: 12px; font-weight: 600; color: var(--text-secondary);
+    text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px;
+  }
+  .code-block { margin-bottom: 22px; }
+  .tag-pill {
+    display: inline-block; font-size: 11px; font-weight: 600; padding: 2px 10px;
+    border-radius: 980px; background: var(--pill-bg); color: var(--text-secondary);
+    margin-left: 8px; vertical-align: 2px;
+  }
+  .tag-pill.live { background: #d1f7dd; color: #0a6b2c; }
+
+  .two-col { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 24px; }
+  @media (max-width: 720px) { .two-col { grid-template-columns: minmax(0, 1fr); } }
+  @media (max-width: 600px) { table { display: block; overflow-x: auto; } }
+
+  /* Use cases */
+  .usecase-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 18px; }
+  .usecase {
+    display: flex; gap: 16px; padding: 22px;
+    background: var(--card-bg); border: 1px solid var(--border); border-radius: 16px;
+  }
+  .usecase .icon { width: 26px; height: 26px; flex: none; color: var(--accent); }
+  .usecase .icon svg { display: block; width: 100%; height: 100%; }
+  .usecase h4 { margin: 0 0 6px; font-size: 16px; font-weight: 600; }
+  .usecase p { margin: 0; font-size: 13.5px; color: var(--text-secondary); line-height: 1.5; }
+
+  /* API table */
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th, td { text-align: left; padding: 12px 14px; border-bottom: 1px solid var(--border); }
+  th { color: var(--text-secondary); font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: 0.04em; }
+  td code { background: var(--code-bg); padding: 2px 6px; border-radius: 5px; font-size: 12.5px; }
+
+  /* Stat cards */
+  .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 16px; }
+  .stat-card {
+    background: var(--card-bg); border: 1px solid var(--border); border-radius: 16px;
+    padding: 24px 20px; text-align: center;
+  }
+  .stat-card .stat-value { font-size: clamp(28px, 4vw, 36px); font-weight: 700; letter-spacing: -0.01em; color: var(--accent); }
+  .stat-card .stat-label { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text); margin-top: 6px; }
+  .stat-card .stat-note { font-size: 12.5px; color: var(--text-secondary); margin-top: 6px; }
+
+  /* Use-case example line */
+  .usecase .example {
+    display: block; margin-top: 10px; font-size: 13px;
+    font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+    color: var(--text-secondary); background: var(--code-bg); border-radius: 8px;
+    padding: 7px 10px;
+  }
+
+  /* Copy button on code blocks */
+  .code-block { position: relative; }
+  .copy-btn {
+    position: absolute; top: 10px; right: 10px;
+    background: var(--bg-subtle); border: 1px solid var(--border); border-radius: 6px;
+    color: var(--text-secondary); font-size: 11px; font-weight: 600;
+    padding: 5px 9px; cursor: pointer; font-family: inherit;
+  }
+  .copy-btn:hover { color: var(--text); border-color: var(--text-secondary); }
+  .copy-btn.copied { color: var(--accent); border-color: var(--accent); }
+
+  /* Prompt block for AI coding agents */
+  .prompt-block {
+    background: var(--bg-subtle); border: 1px solid var(--border); border-radius: 14px;
+    padding: 22px; margin-top: 16px;
+  }
+  .prompt-block .code-label { margin-bottom: 10px; }
+  .prompt-block pre { background: var(--card-bg); }
+
+  /* FAQ */
+  .faq-item { border-bottom: 1px solid var(--border); padding: 20px 0; }
+  .faq-item:first-child { padding-top: 0; }
+  .faq-item:last-child { border-bottom: none; }
+  .faq-item h4 { font-size: 16px; font-weight: 600; margin: 0 0 8px; }
+  .faq-item p { font-size: 14.5px; color: var(--text-secondary); margin: 0; line-height: 1.6; }
+  /* Pricing */
+  .price-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; align-items: stretch; }
+  @media (max-width: 860px) { .price-grid { grid-template-columns: 1fr; max-width: 460px; margin: 0 auto; } }
+  .nowrap { white-space: nowrap; }
+  .price-card {
+    position: relative; display: flex; flex-direction: column;
+    background: var(--card-bg); border: 1px solid var(--border); border-radius: 18px; padding: 28px 24px;
+  }
+  .price-card.featured { border: 2px solid var(--accent); }
+  .price-badge {
+    position: absolute; top: -12px; left: 24px;
+    background: var(--accent); color: #fff; font-size: 11px; font-weight: 600;
+    letter-spacing: 0.04em; text-transform: uppercase; padding: 4px 10px; border-radius: 980px;
+  }
+  .price-card .plan { font-size: 13px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; color: var(--accent); }
+  .price-card .price { font-size: 34px; font-weight: 700; letter-spacing: -0.01em; margin: 8px 0 4px; }
+  .price-card .price-sub { font-size: 14px; color: var(--text-secondary); margin: 0 0 18px; min-height: 42px; }
+  .price-card ul { list-style: none; padding: 0; margin: 0 0 22px; flex: 1; }
+  .price-card li { position: relative; padding-left: 24px; font-size: 14px; line-height: 1.5; margin-bottom: 10px; }
+  .price-card li::before { content: "✓"; position: absolute; left: 0; color: var(--accent); font-weight: 700; }
+  .price-card .btn { text-align: center; }
+  .price-contact { display: flex; gap: 8px; flex-wrap: wrap; }
+  .price-contact .btn { flex: 1; padding-left: 12px; padding-right: 12px; font-size: 14px; }
+  .price-rules { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 28px; }
+  @media (max-width: 720px) { .price-rules { grid-template-columns: 1fr; } }
+  .price-rules > div { background: var(--bg-subtle); border-radius: 18px; padding: 24px; }
+  .price-rules h3 { font-size: 17px; font-weight: 600; margin: 0 0 12px; }
+  .price-rules p, .price-rules li { font-size: 14px; color: var(--text-secondary); line-height: 1.55; }
+  .price-rules p { margin: 0 0 10px; }
+  .price-rules ul { margin: 0; padding-left: 18px; }
+  .price-rules li { margin-bottom: 6px; }
+  .price-foot { text-align: center; font-size: 14px; color: var(--text-secondary); margin: 26px 0 0; }
+
+
+  /* Footer */
+  footer {
+    max-width: 980px; margin: 0 auto; padding: 50px 22px 80px;
+    border-top: 1px solid var(--border);
+    display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;
+  }
+  footer .foot-links { display: flex; gap: 22px; flex-wrap: wrap; }
+  footer .foot-links a { font-size: 13px; color: var(--text-secondary); }
+  footer .copyright { font-size: 12px; color: var(--text-secondary); }
+
+  .bubble { display:inline-block; background: var(--card-bg); border:1px solid var(--border); border-radius:18px 18px 18px 6px;
+    padding:10px 16px; font-size:16px; margin-bottom:16px; }
+  .chip-row { display:flex; gap:10px; flex-wrap:wrap; }
+  .chip-row span { border:1px solid var(--accent); color: var(--accent); border-radius:980px; padding:7px 16px; font-size:14.5px; background: var(--card-bg); }
+
+  .shot { padding:0; overflow:hidden; }
+  .shot img { width:100%; display:block; border-bottom:1px solid var(--border); }
+  .shot-caption { padding:20px; }
+  .table-note { font-size:14px; color:var(--text-secondary); margin-top:18px; line-height:1.6; }
+  .table-wrap { overflow-x:auto; }
+  @media (max-width: 720px) { .nav-links { display:none; } .hero { padding-top:60px; } }
+  .verdict { border-radius:980px; padding:7px 16px; font-size:14.5px; font-weight:500; border:1px solid var(--border); background: var(--card-bg); }
+  .verdict.ok { color:#1b873f; border-color:#1b873f; }
+  .verdict.bad { color:#d1242f; border-color:#d1242f; }
+  .verdict.score { color: var(--text-secondary); }
+  .chip-row .restored { font-size: 17px; font-weight: 500; color: var(--accent); }
+
+  /* App ideas */
+  .idea-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(290px, 1fr)); gap: 12px; }
+  .idea {
+    display: flex; gap: 12px; align-items: flex-start; padding: 14px 16px;
+    background: var(--card-bg); border: 1px solid var(--border); border-radius: 14px;
+  }
+  .idea .emo { font-size: 22px; line-height: 1.2; flex: none; }
+  .idea p { margin: 0; font-size: 14px; line-height: 1.45; color: var(--text-secondary); }
+  .idea p b { color: var(--text); font-weight: 600; }
+
+  /* ===== Android Pastel (matches rajumark.github.io/hoverfly) ===== */
+  html { color-scheme: light; scroll-padding-top: 72px; }
+  body { font-family: var(--font); overflow-x: hidden; }
+  code, pre, .usecase .example, .sd-code, .lang-row .lbl { font-family: var(--mono); }
+  a { color: var(--link); }
+  a:hover { color: var(--link); text-decoration: underline; }
+  a.btn:hover, a.nav-cta:hover, .nav-brand:hover, .foot-links a:hover { text-decoration: none; }
+
+  /* Header */
+  nav { border-bottom: 1px solid var(--border); }
+  .nav-inner { max-width: 1200px; height: 64px; padding: 0 24px; }
+  .nav-brand { gap: 10px; font-size: 22px; font-weight: 500; color: var(--text-strong); letter-spacing: -0.01em; }
+  .nav-brand svg { width: 30px; height: 30px; }
+  .nav-links { gap: 4px; height: 64px; }
+  .nav-links a {
+    display: inline-flex; align-items: center; height: 100%; padding: 0 12px; font-size: 14px; font-weight: 500;
+    color: var(--text-secondary); opacity: 1; border-top: 3px solid transparent; border-bottom: 3px solid transparent;
+  }
+  .nav-links a:hover { color: var(--text-strong); border-bottom-color: var(--green); text-decoration: none; }
+  .nav-cta { height: 36px; display: inline-flex; align-items: center; padding: 0 16px; font-size: 14px; font-weight: 500; background: #000 !important; color: #fff !important; }
+  .nav-cta:hover { box-shadow: var(--shadow); }
+
+  /* Hero */
+  .hero { max-width: 1200px; padding: 88px 24px 72px; }
+  .hero .eyebrow {
+    display: inline-block; font-size: 14px; font-weight: 500; color: var(--accent);
+    background: var(--tonal); padding: 6px 16px; border-radius: 96px; margin-bottom: 24px;
+  }
+  .hero h1 { font-size: clamp(40px, 6.4vw, 64px); font-weight: 700; letter-spacing: -0.02em; line-height: 1.1; color: var(--text-strong); margin-bottom: 20px; }
+  .hero p.tagline { font-size: clamp(18px, 2.2vw, 22px); color: var(--text); max-width: 680px; line-height: 1.55; }
+  .hero-trust { font-size: 14px; }
+  .hero-demo {
+    border: 0; border-radius: 32px; padding: 40px; max-width: 760px;
+    background-color: var(--band-lime);
+    background-image: radial-gradient(rgba(7, 48, 66, 0.16) 1.2px, transparent 1.3px); background-size: 26px 26px; background-position: 13px 13px;
+  }
+  .hero-demo .prompt { font-family: var(--mono); color: var(--accent); }
+  .hero-demo .input-row { border: 0; border-radius: 16px; box-shadow: var(--shadow); padding: 14px 18px; }
+  @media (max-width: 640px) { .hero-demo { padding: 24px 18px; border-radius: 24px; } }
+
+  /* Buttons: 48px Material pills */
+  .btn { height: 48px; padding: 0 24px; border: 0; font-size: 16px; font-weight: 500; justify-content: center; transition: box-shadow .2s, background .2s; }
+  .btn-primary { background: #000; color: #fff !important; }
+  .btn-primary:hover { background: #000; box-shadow: var(--shadow); }
+  .btn-secondary { background: var(--tonal); color: var(--accent) !important; border: 0; }
+  .btn-secondary:hover { background: var(--tonal-hover); color: var(--accent) !important; }
+
+  /* Sections: full-bleed pastel bands, no rules between them */
+  section {
+    max-width: 1200px; padding: 96px 24px; border-top: 0;
+    background: var(--band); box-shadow: 0 0 0 100vmax var(--band); clip-path: inset(0 -100vmax);
+  }
+  section:nth-of-type(7n+1) { --band: var(--band-pink); }
+  section:nth-of-type(7n+2) { --band: var(--band-lavender); }
+  section:nth-of-type(7n+3) { --band: var(--band-periwinkle); }
+  section:nth-of-type(7n+4) { --band: var(--band-mint); }
+  section:nth-of-type(7n+5) { --band: var(--band-cream); }
+  section:nth-of-type(7n+6) { --band: var(--band-peach); }
+  section:nth-of-type(7n+7) { --band: var(--band-lime); }
+  @media (max-width: 720px) { section { padding: 64px 16px; } .hero { padding: 56px 16px 48px; } .nav-inner { padding: 0 16px; } }
+  .section-head { margin-bottom: 48px; }
+  .section-head .kicker { font-size: 14px; font-weight: 500; text-transform: none; letter-spacing: 0.02em; color: var(--text-secondary); margin-bottom: 12px; }
+  .section-head h2 { font-size: clamp(32px, 4.6vw, 48px); font-weight: 600; letter-spacing: -0.01em; line-height: 1.15; color: var(--text-strong); }
+  .section-head p { font-size: 18px; color: var(--text); max-width: 680px; }
+
+  /* Cards: white, rounded, lifted on hover */
+  .card, .usecase, .idea, .stat-card, .price-card, .price-rules > div {
+    background: var(--card-bg); border: 0; border-radius: 28px; transition: box-shadow .2s, transform .2s;
+  }
+  .usecase, .idea { border-radius: 20px; }
+  .card:hover, .usecase:hover, .idea:hover { box-shadow: var(--shadow); transform: translateY(-2px); }
+  .card .icon { width: 48px; height: 48px; padding: 12px; border-radius: 16px; background: var(--accent); color: var(--green); margin-bottom: 18px; }
+  .card h3 { font-size: 22px; font-weight: 600; color: var(--text-strong); }
+  .card p { font-size: 15px; }
+  .usecase .icon { width: 40px; height: 40px; padding: 9px; border-radius: 14px; background: var(--accent); color: var(--green); }
+  .usecase h4 { font-size: 17px; font-weight: 600; color: var(--text-strong); }
+  .usecase .example { background: var(--bg-subtle); border-radius: 10px; }
+  .idea { padding: 16px 18px; }
+  .idea p b { font-weight: 500; }
+  .stat-card .stat-value { color: var(--text-strong); font-weight: 700; }
+  .stat-card .stat-label { font-weight: 500; letter-spacing: 0.04em; }
+  /* Screenshots: one height per strip, card width follows the image ratio, scroll sideways */
+  .shots { display: flex; gap: 20px; overflow-x: auto; overscroll-behavior-x: contain; scroll-snap-type: x proximity; padding: 8px 4px 16px; margin: -8px -4px 0; scrollbar-width: thin; }
+  .shot { flex: 0 0 auto; padding: 0; overflow: hidden; display: flex; flex-direction: column; scroll-snap-align: start; }
+  .shot img { display: block; height: 480px; width: auto; max-width: none; border-bottom: 1px solid var(--border); cursor: zoom-in; }
+  .shot img:focus-visible { outline: 3px solid var(--green); outline-offset: -3px; }
+  .shot-caption { padding: 18px 20px 20px; width: 0; min-width: 100%; box-sizing: border-box; }
+  .shots-nav { display: flex; justify-content: flex-end; gap: 8px; margin-top: 4px; }
+  .shots-nav[hidden] { display: none; }
+  .shots-nav button { width: 40px; height: 40px; border-radius: 50%; border: 0; background: var(--card-bg); color: var(--text-strong); box-shadow: var(--shadow); cursor: pointer; display: grid; place-items: center; }
+  .shots-nav button:disabled { opacity: 0.35; cursor: default; box-shadow: none; }
+  /* Phones: stacked list, each card sized to its image */
+  @media (max-width: 720px) {
+    .shots { flex-direction: column; align-items: center; overflow: visible; padding: 0; margin: 0; }
+    .shot { flex: none; max-width: 100%; }
+    .shot img { height: auto; max-height: 70vh; max-width: 100%; }
+  }
+  /* Full-screen screenshot viewer */
+  .lightbox { border: 0; padding: 0; margin: 0; width: 100vw; height: 100vh; max-width: 100vw; max-height: 100vh; background: transparent; }
+  .lightbox[open] { display: flex; align-items: center; justify-content: center; }
+  .lightbox::backdrop { background: rgba(8, 12, 18, 0.9); backdrop-filter: blur(6px); }
+  .lightbox figure { margin: 0; display: flex; flex-direction: column; align-items: center; gap: 14px; padding: 0 72px; }
+  .lightbox img { display: block; width: auto; height: auto; max-width: min(100%, 1400px); max-height: calc(100vh - 120px); border-radius: 16px; background: #fff; box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45); }
+  .lightbox figcaption { color: #fff; font-size: 15px; text-align: center; max-width: 640px; }
+  .lightbox figcaption b { font-weight: 600; margin-right: 6px; }
+  .lb-btn { position: fixed; width: 44px; height: 44px; border-radius: 50%; border: 0; background: rgba(255, 255, 255, 0.16); color: #fff; display: grid; place-items: center; cursor: pointer; }
+  .lb-btn:hover { background: rgba(255, 255, 255, 0.28); }
+  .lb-btn:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+  .lb-btn[hidden] { display: none; }
+  .lb-close { top: 16px; right: 16px; }
+  .lb-prev { left: 16px; top: calc(50% - 22px); }
+  .lb-next { right: 16px; top: calc(50% - 22px); }
+  @media (max-width: 720px) {
+    .lightbox figure { padding: 0 12px; }
+    .lightbox img { max-height: calc(100vh - 170px); border-radius: 12px; }
+    .lb-prev, .lb-next { top: auto; bottom: 20px; }
+    .lb-prev { left: calc(50% - 52px); }
+    .lb-next { right: calc(50% - 52px); }
+  }
+  /* Section links don't fit beside the logo and GitHub button on tablets */
+  @media (max-width: 960px) { .nav-links { display: none; } }
+
+  /* Code: Android-navy boxes with green highlights */
+  pre { background: #073042; color: #e8eaed; border: 0; border-radius: 20px; padding: 22px 24px; font-size: 13.5px; --code-text: #e8eaed; }
+  .code-label { font-size: 13px; font-weight: 500; letter-spacing: 0.02em; text-transform: none; color: var(--text-secondary); }
+  .copy-btn { background: rgba(255, 255, 255, 0.1); border: 0; border-radius: 96px; color: #e8eaed; font-weight: 500; padding: 6px 14px; font-size: 12px; }
+  .copy-btn:hover { background: rgba(255, 255, 255, 0.18); color: #fff; }
+  .copy-btn.copied { background: var(--green); color: #073042; }
+  .code-label + .copy-btn { top: 38px; }
+  .prompt-block { background: var(--card-bg); border: 0; border-radius: 28px; padding: 28px; }
+  .prompt-block pre { background: #073042; }
+  .tag-pill { font-weight: 500; border-radius: 8px; }
+  .tag-pill.live { background: var(--green-soft); color: var(--green-ink); }
+
+  /* Tables: white rounded sheet */
+  table { background: var(--card-bg); border-collapse: separate; border-spacing: 0; border-radius: 20px; overflow: hidden; font-size: 15px; }
+  th, td { padding: 14px 18px; }
+  tbody tr:last-child td { border-bottom: 0; }
+  th { font-weight: 500; letter-spacing: 0.02em; text-transform: none; font-size: 13px; background: var(--bg-subtle); }
+  td code { background: var(--bg-subtle); color: var(--text); }
+  .table-note { font-size: 15px; }
+
+  /* Bars and chips inside demos */
+  .lang-row .bar i, .sd-row .bar i { background: var(--green); }
+  .lang-row .bar, .sd-row .bar { background: rgba(7, 48, 66, 0.12); }
+  .sd-pen { background: var(--green); }
+  .sd-canvas { border: 0; box-shadow: var(--shadow); }
+  .sd-side .sd-label { color: var(--accent); font-weight: 500; }
+  .bubble { border: 0; box-shadow: var(--shadow); }
+  .chip-row span { border: 0; background: var(--green); color: var(--accent); font-weight: 500; border-radius: 8px; }
+  .chip-row .restored { color: var(--accent); }
+  .verdict { border-radius: 8px; }
+
+  /* Pricing */
+  .price-card.featured { border: 2px solid var(--accent); }
+  .price-badge { background: var(--green); color: var(--accent); font-weight: 700; }
+  .price-card .plan { color: var(--text-secondary); font-weight: 500; letter-spacing: 0.04em; }
+  .price-card .price { color: var(--text-strong); }
+  .price-card li::before { color: #188038; }
+  .price-rules > div { padding: 28px; }
+  .price-rules h3 { color: var(--text-strong); font-weight: 600; }
+
+  /* FAQ */
+  .faq-item { border-bottom-color: rgba(7, 48, 66, 0.14); }
+  .faq-item h4 { font-size: 18px; font-weight: 500; color: var(--text-strong); }
+  .faq-item p { font-size: 15.5px; color: var(--text); }
+
+  /* Keep code columns and the nav inside the phone screen */
+  .two-col { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  .two-col > * { min-width: 0; }
+  @media (max-width: 720px) { .two-col { grid-template-columns: minmax(0, 1fr); } .nav-links { display: none; } }
+  @media (max-width: 600px) { table { display: block; overflow-x: auto; } }
+  /* Footer: light grey, full width */
+  footer { max-width: 1200px; padding: 48px 24px 56px; border-top: 1px solid var(--border); background: var(--band-grey); box-shadow: 0 0 0 100vmax var(--band-grey); clip-path: inset(0 -100vmax); }
+  footer .foot-links a { font-size: 14px; }
+  footer .foot-links a:hover { color: var(--link); text-decoration: underline; }
+  footer .copyright { font-size: 13px; }
+
+  /* ===== Hub navigation, creator note, more models ===== */
+  .nav-left { display: flex; align-items: center; gap: 12px; min-width: 0; }
+  .nav-back {
+    display: inline-flex; align-items: center; gap: 6px; height: 36px; padding: 0 14px 0 10px; border-radius: 96px;
+    background: var(--tonal); color: var(--accent) !important; font-size: 14px; font-weight: 500; white-space: nowrap;
+    transition: background .2s;
+  }
+  .nav-back:hover { background: var(--tonal-hover); text-decoration: none !important; }
+  .nav-back svg { width: 18px; height: 18px; flex: none; transition: transform .2s; }
+  .nav-back:hover svg { transform: translateX(-2px); }
+  .nav-back:focus-visible, .creator-card:focus-visible, .model-tile:focus-visible { outline: 3px solid var(--green); outline-offset: 3px; }
+  .nav-sep { width: 1px; height: 24px; background: var(--border); flex: none; }
+  @media (max-width: 520px) {
+    .nav-back { width: 36px; padding: 0; justify-content: center; }
+    .nav-back span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+    .nav-left { gap: 10px; }
+    .nav-brand { font-size: 19px; }
+  }
+  .hero .eyebrow a { color: inherit; text-decoration: underline; text-decoration-color: rgba(7, 48, 66, .35); text-underline-offset: 3px; }
+
+  .creator-card {
+    display: block; max-width: 880px; margin: 0 auto; padding: 56px 56px 40px; border-radius: 32px;
+    background: #073042; color: #e8eaed !important; text-decoration: none !important; position: relative; overflow: hidden;
+    transition: box-shadow .25s, transform .25s;
+  }
+  .creator-card::before {
+    content: ""; position: absolute; inset: 0; pointer-events: none;
+    background-image: radial-gradient(rgba(61, 220, 132, .16) 1.2px, transparent 1.3px); background-size: 26px 26px;
+    -webkit-mask-image: linear-gradient(135deg, transparent 45%, #000); mask-image: linear-gradient(135deg, transparent 45%, #000);
+  }
+  .creator-card:hover { transform: translateY(-3px); box-shadow: 0 12px 32px rgba(7, 48, 66, .35); }
+  .creator-kicker { position: relative; display: inline-flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 500; color: #3ddc84; margin-bottom: 20px; }
+  .creator-kicker svg { width: 18px; height: 18px; }
+  .creator-quote { position: relative; margin: 0; font-size: clamp(28px, 4.4vw, 44px); font-weight: 600; line-height: 1.18; letter-spacing: -0.015em; color: #fff; }
+  .creator-quote mark { background: linear-gradient(transparent 62%, rgba(61, 220, 132, .55) 62%); color: inherit; }
+  .creator-sub { position: relative; margin: 18px 0 0; font-size: 18px; line-height: 1.55; color: #bdc1c6; max-width: 640px; }
+  .creator-sign { position: relative; display: flex; align-items: center; gap: 14px; margin-top: 36px; padding-top: 24px; border-top: 1px solid rgba(255, 255, 255, .14); flex-wrap: wrap; }
+  .creator-sign img { width: 52px; height: 52px; border-radius: 50%; object-fit: cover; box-shadow: 0 0 0 3px #3ddc84; }
+  .creator-sign b { display: block; font-size: 17px; font-weight: 600; color: #fff; }
+  .creator-sign small { display: block; font-size: 14px; color: #bdc1c6; }
+  .creator-go {
+    margin-left: auto; display: inline-flex; align-items: center; gap: 6px; height: 44px; padding: 0 20px; border-radius: 96px;
+    background: #3ddc84; color: #073042; font-size: 15px; font-weight: 600; transition: gap .2s;
+  }
+  .creator-card:hover .creator-go { gap: 10px; }
+  @media (max-width: 640px) {
+    .creator-card { padding: 36px 24px 28px; border-radius: 24px; }
+    .creator-go { margin-left: 0; width: 100%; justify-content: center; }
+  }
+
+  .model-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+  @media (max-width: 1020px) { .model-grid { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 560px) { .model-grid { grid-template-columns: 1fr; } }
+  .model-tile {
+    display: flex; gap: 14px; align-items: flex-start; padding: 20px; border-radius: 24px; background: var(--card-bg);
+    color: var(--text) !important; text-decoration: none !important; transition: box-shadow .2s, transform .2s;
+  }
+  .model-tile { position: relative; }
+  .model-tile.is-here { box-shadow: inset 0 0 0 2px #3ddc84; }
+  .model-tile .here { position: absolute; top: 14px; right: 14px; font-size: 11px; font-weight: 600; padding: 3px 9px; border-radius: 96px; background: #c4eed0; color: #072711; }
+  a.model-tile:hover { box-shadow: var(--shadow); transform: translateY(-2px); }
+  .model-tile .emo { flex: none; width: 44px; height: 44px; border-radius: 14px; background: #073042; display: grid; place-items: center; font-size: 22px; }
+  .model-tile b { display: block; font-size: 17px; font-weight: 600; color: var(--text-strong); }
+  .model-tile .job { display: block; font-size: 12px; font-weight: 500; letter-spacing: .04em; text-transform: uppercase; color: var(--text-secondary); margin: 2px 0 6px; }
+  .model-tile .what { display: block; font-size: 14px; line-height: 1.45; color: var(--text-secondary); }
+  .all-models-cta { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-top: 40px; }
+  .all-models-cta .btn svg { width: 18px; height: 18px; }
+
+  /* ===== Model switcher (next to the logo) ===== */
+  .nav-cta { white-space: nowrap; }
+  @media (max-width: 960px) { .nav-links { display: none; } }
+  .nav-switch { position: relative; }
+  .nav-switch summary {
+    list-style: none; cursor: pointer; display: grid; place-items: center; width: 32px; height: 32px; border-radius: 50%;
+    color: var(--text-secondary); transition: background .2s, color .2s;
+  }
+  .nav-switch summary::-webkit-details-marker { display: none; }
+  .nav-switch summary:hover, .nav-switch[open] summary { background: var(--tonal); color: var(--text-strong); }
+  .nav-switch summary:focus-visible { outline: 3px solid var(--green); outline-offset: 2px; }
+  .nav-switch summary svg { width: 18px; height: 18px; transition: transform .2s; }
+  .nav-switch[open] summary svg { transform: rotate(180deg); }
+  .nav-switch-menu {
+    position: absolute; top: calc(100% + 10px); left: -8px; width: 300px; max-width: calc(100vw - 32px); padding: 8px;
+    border-radius: 20px; background: var(--card-bg); border: 1px solid var(--border); box-shadow: var(--shadow); z-index: 200;
+  }
+  .nav-switch-head { padding: 8px 12px 6px; font-size: 12px; font-weight: 500; letter-spacing: .04em; text-transform: uppercase; color: var(--text-secondary); }
+  .nav-switch-menu a {
+    display: flex; align-items: center; gap: 12px; padding: 8px 12px; border-radius: 12px; color: var(--text) !important;
+    text-decoration: none !important; font-size: 15px;
+  }
+  .nav-switch-menu a:hover, .nav-switch-menu a:focus-visible { background: var(--tonal); outline: none; }
+  .nav-switch-menu a .e { flex: none; width: 32px; height: 32px; border-radius: 10px; background: #073042; display: grid; place-items: center; font-size: 16px; }
+  .nav-switch-menu a b { display: block; font-weight: 600; color: var(--text-strong); }
+  .nav-switch-menu a small { display: block; font-size: 12px; color: var(--text-secondary); }
+  .nav-switch-menu a[aria-current] { box-shadow: inset 0 0 0 2px #3ddc84; }
+  .nav-switch-menu a.all { justify-content: center; margin-top: 6px; border-top: 1px solid var(--border); border-radius: 0 0 12px 12px; padding-top: 12px; font-weight: 500; color: var(--accent) !important; }
+  @media (max-width: 520px) { .nav-switch-menu { position: fixed; top: 64px; left: 16px; right: 16px; width: auto; max-width: none; } }
+
+  /* Live demo: the real library (Kotlin/Wasm) in a Web Worker. A div, not a section, so the section bands below keep their colours. */
+  .live-band { padding: 72px 22px; background: var(--accent); box-shadow: 0 0 0 100vmax var(--accent); clip-path: inset(0 -100vmax); }
+  .live-inner { max-width: 980px; margin: 0 auto; }
+  .live-band .section-head { margin-bottom: 36px; }
+  .live-band .section-head .kicker { color: var(--green); display: inline-flex; align-items: center; gap: 8px; }
+  .live-band .section-head .kicker::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--green); box-shadow: 0 0 0 4px rgba(61, 220, 132, .25); }
+  .live-band .section-head h2 { color: #fff; }
+  .live-band .section-head p { color: rgba(255, 255, 255, .78); }
+  .live-card { max-width: 760px; margin: 0 auto; background: var(--card-bg); border-radius: 28px; padding: 28px; box-shadow: 0 12px 40px rgba(0, 0, 0, .25); }
+  .live-status { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text-secondary); background: var(--bg-subtle); border-radius: 980px; padding: 6px 12px 6px 10px; margin-bottom: 16px; }
+  .live-status .dot { width: 14px; height: 14px; border-radius: 50%; border: 2px solid var(--border); border-top-color: var(--accent); animation: live-spin .8s linear infinite; flex: none; }
+  .live-status[data-state="ready"] { background: var(--green-soft); color: var(--green-ink); }
+  .live-status[data-state="ready"] .dot { border: 0; background: #1e8e3e; animation: none; width: 8px; height: 8px; margin: 0 3px; }
+  .live-status[data-state="error"] { background: #fce8e6; color: #a50e0e; }
+  .live-status[data-state="error"] .dot { border: 0; background: #d93025; animation: none; width: 8px; height: 8px; margin: 0 3px; }
+  @keyframes live-spin { to { transform: rotate(360deg); } }
+  @keyframes live-shimmer { from { background-position: 100% 0; } to { background-position: -200% 0; } }
+  .live-input { display: block; width: 100%; font: inherit; font-size: 20px; color: var(--text-strong); padding: 14px 18px; border: 2px solid var(--border); border-radius: 16px; background: var(--bg); outline: none; transition: border-color .15s; resize: vertical; }
+  .live-input:focus { border-color: var(--accent); }
+  textarea.live-input { min-height: 96px; line-height: 1.45; font-size: 18px; }
+  .live-examples { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0 20px; }
+  .live-examples button, .live-seg button, .live-btn { font: inherit; font-size: 13px; color: var(--text); background: var(--bg-subtle); border: 1px solid transparent; border-radius: 980px; padding: 5px 12px; cursor: pointer; }
+  .live-examples button:hover, .live-seg button:hover, .live-btn:hover { border-color: var(--border); background: var(--tonal-hover); }
+  .live-seg { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+  .live-seg button[aria-pressed="true"] { border-color: var(--accent); background: var(--bg); }
+  .live-foot { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 12px; margin-top: 18px; font-size: 13px; color: var(--text-secondary); }
+  .live-meta { font-variant-numeric: tabular-nums; }
+  .live-skel { border-radius: 14px; min-height: 22px; background: linear-gradient(90deg, #eef1ec 25%, #f9fbf6 50%, #eef1ec 75%); background-size: 300% 100%; animation: live-shimmer 1.1s linear infinite; }
+  .live-skel + .live-skel { margin-top: 10px; }
+  .live-label { font-size: 12px; font-weight: 500; letter-spacing: .02em; color: var(--text-secondary); margin: 0 0 8px; }
+  .live-rows { display: grid; gap: 6px; }
+  .live-row { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 2fr) 48px; align-items: center; gap: 12px; font-size: 14px; }
+  .live-row .n { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-strong); }
+  .live-row .n small { color: var(--text-secondary); margin-left: 6px; font-family: var(--mono); font-size: 11px; }
+  .live-row .bar { height: 8px; border-radius: 99px; background: var(--bg-subtle); overflow: hidden; }
+  .live-row .bar i { display: block; height: 100%; border-radius: 99px; background: var(--green); transition: width .25s; }
+  .live-row .v { text-align: right; font-variant-numeric: tabular-nums; color: var(--text-secondary); }
+  .live-row.is-top .n { font-weight: 600; }
+  .live-out { border-radius: 16px; background: var(--bg-subtle); padding: 16px 18px; font-size: 18px; line-height: 1.6; color: var(--text-strong); min-height: 60px; overflow-wrap: anywhere; white-space: pre-wrap; }
+  .live-toast { position: fixed; left: 16px; bottom: 16px; z-index: 120; display: flex; align-items: center; gap: 8px; padding: 8px 14px 8px 10px; border-radius: 980px; background: var(--accent); color: #fff !important; font-size: 13px; box-shadow: 0 0 0 1px rgba(255, 255, 255, .18), 0 4px 16px rgba(0, 0, 0, .2); transition: opacity .4s, transform .4s; }
+  .live-toast .dot { width: 14px; height: 14px; border-radius: 50%; border: 2px solid rgba(255, 255, 255, .3); border-top-color: var(--green); animation: live-spin .8s linear infinite; }
+  .live-toast.is-ready .dot { border: 0; background: var(--green); animation: none; width: 8px; height: 8px; margin: 0 3px; }
+  .live-toast.is-hidden { opacity: 0; transform: translateY(12px); pointer-events: none; }
+  .visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  @media (max-width: 720px) { .live-band { padding: 56px 16px; } .live-card { padding: 18px; border-radius: 22px; } .live-input { font-size: 18px; } textarea.live-input { font-size: 16px; } .live-out { font-size: 16px; } }
+  @media (max-width: 520px) { .live-row { grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr) 42px; gap: 8px; font-size: 13px; } }
+  @media (prefers-reduced-motion: reduce) { .live-status .dot, .live-toast .dot, .live-skel { animation: none; } }
+
+  .ck-wrap { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 24px; align-items: start; }
+  .ck-pad { position: relative; aspect-ratio: 1; border: 2px solid var(--border); border-radius: 18px; background: #fff; overflow: hidden; touch-action: none; }
+  .ck-pad canvas { display: block; width: 100%; height: 100%; cursor: crosshair; touch-action: none; }
+  .ck-hint { position: absolute; inset: auto 0 14px; text-align: center; font-size: 13px; color: var(--text-secondary); pointer-events: none; }
+  .ck-btns { display: flex; gap: 8px; margin-top: 16px; }
+  .ck-try { font-size: 13px; color: var(--text-secondary); margin: 12px 0 0; }
+  .ck-big { font-size: 26px; font-weight: 600; color: var(--text-strong); margin: 0 0 12px; text-transform: capitalize; }
+  @media (max-width: 640px) { .ck-wrap { grid-template-columns: 1fr; gap: 16px; } }
+
+  /* Retake: hero demo (photo + verdict) and live demo (photo picker) */
+  .rt-demo { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 20px; max-width: 860px; margin: 40px auto 0; text-align: left; background: var(--card-bg); border: 1px solid var(--border); border-radius: 28px; padding: 18px; box-shadow: 0 12px 40px rgba(0, 0, 0, .08); transition: opacity .4s; }
+  .rt-demo.is-fading { opacity: .25; }
+  .rt-photo { position: relative; border-radius: 18px; overflow: hidden; background: var(--bg-subtle); aspect-ratio: 4 / 3; }
+  .rt-photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .rt-scan { position: absolute; left: 0; right: 0; top: 0; height: 30%; background: linear-gradient(180deg, rgba(61, 220, 132, 0) 0%, rgba(61, 220, 132, .35) 85%, rgba(61, 220, 132, .9) 100%); transform: translateY(-110%); pointer-events: none; }
+  .rt-scan.is-on { animation: rt-scan 1.1s ease-in-out; }
+  @keyframes rt-scan { from { transform: translateY(-110%); } to { transform: translateY(340%); } }
+  .rt-side { display: flex; flex-direction: column; justify-content: center; gap: 10px; }
+  .rt-verdict { font-size: 26px; font-weight: 600; line-height: 1.2; color: var(--text-strong); }
+  .rt-verdict.good { color: #1e8e3e; }
+  .rt-verdict.bad { color: #c5221f; }
+  .rt-hint { font-size: 14px; color: var(--text-secondary); min-height: 20px; }
+  .rt-rows { display: grid; gap: 7px; }
+  .rt-row { display: grid; grid-template-columns: 58px minmax(0, 1fr) 42px; align-items: center; gap: 10px; font-size: 14px; }
+  .rt-row .bar { height: 8px; border-radius: 99px; background: var(--bg-subtle); overflow: hidden; }
+  .rt-row .bar i { display: block; height: 100%; width: 0; border-radius: 99px; background: #adb5bd; transition: width .6s; }
+  .rt-row.hit .bar i { background: #d93025; }
+  .rt-row .v { text-align: right; font-variant-numeric: tabular-nums; color: var(--text-secondary); }
+  .rt-code { font-family: var(--mono); font-size: 12px; color: var(--text-secondary); }
+  .rt-thumbs { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 14px; }
+  .rt-thumbs button { border: 0; padding: 0; background: none; cursor: pointer; font: inherit; font-size: 12px; color: var(--text); display: flex; flex-direction: column; align-items: center; gap: 3px; }
+  .rt-thumbs img { width: 62px; height: 62px; object-fit: cover; border-radius: 12px; border: 3px solid transparent; }
+  .rt-thumbs button[aria-pressed="true"] img { border-color: var(--accent); }
+  .rt-drop { display: flex; align-items: center; justify-content: center; gap: 10px; border: 2px dashed var(--border); border-radius: 16px; padding: 14px; margin-bottom: 16px; font-size: 14px; color: var(--text-secondary); cursor: pointer; }
+  .rt-drop.is-over { border-color: var(--accent); background: var(--bg-subtle); }
+  .rt-live { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: 18px; align-items: start; }
+  .rt-live .rt-photo { aspect-ratio: auto; min-height: 200px; display: flex; align-items: center; justify-content: center; }
+  .rt-live .rt-photo img { max-height: 360px; object-fit: contain; }
+  @media (max-width: 720px) { .rt-demo, .rt-live { grid-template-columns: minmax(0, 1fr); } .rt-verdict { font-size: 22px; } }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-inner">
+    <div class="nav-left">
+      <a class="nav-back" href="https://rajumark.github.io/hoverfly/#models" title="All Hoverfly models"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M12 19l-7-7 7-7"/></svg><span>All models</span></a>
+      <span class="nav-sep" aria-hidden="true"></span>
+      <a class="nav-brand" href="#top" aria-label="Retake, back to top">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><rect x="1" y="1" width="22" height="22" rx="7" fill="var(--accent)"/><path d="M7 9h2l1-2h4l1 2h2v8H7z" stroke="#fff" stroke-width="1.8" stroke-linejoin="round"/><circle cx="12" cy="13" r="2.2" stroke="#fff" stroke-width="1.8"/></svg>
+      Retake
+    </a>
+      <details class="nav-switch">
+        <summary aria-label="Switch to another Hoverfly model" title="Other models"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary>
+        <div class="nav-switch-menu">
+        <div class="nav-switch-head">Hoverfly models</div>
+        <a href="https://rajumark.github.io/moji/"><span class="e" aria-hidden="true">🙂</span><span><b>Moji</b><small>Emoji suggestions</small></span></a>
+        <a href="https://rajumark.github.io/beacon/"><span class="e" aria-hidden="true">🗼</span><span><b>Beacon</b><small>Language detection</small></span></a>
+        <a href="https://rajumark.github.io/comma/"><span class="e" aria-hidden="true">✍️</span><span><b>Comma</b><small>Punctuation</small></span></a>
+        <a href="https://rajumark.github.io/comeback/"><span class="e" aria-hidden="true">💬</span><span><b>Comeback</b><small>Smart replies</small></span></a>
+        <a href="https://rajumark.github.io/emotion/"><span class="e" aria-hidden="true">😊</span><span><b>Emotion</b><small>Emotion detection</small></span></a>
+        <a href="https://rajumark.github.io/gatekeeper/"><span class="e" aria-hidden="true">🛡️</span><span><b>Gatekeeper</b><small>Toxicity detection</small></span></a>
+        <a href="https://rajumark.github.io/hideout/"><span class="e" aria-hidden="true">🏚️</span><span><b>Hideout</b><small>Personal info hiding</small></span></a>
+        <a href="https://rajumark.github.io/chalk/"><span class="e" aria-hidden="true">🖍️</span><span><b>Chalk</b><small>Doodle recognition</small></span></a>
+        <a href="#top" aria-current="page"><span class="e" aria-hidden="true">📸</span><span><b>Retake</b><small>Photo quality check</small></span></a>
+        <a class="all" href="https://rajumark.github.io/hoverfly/#models">See all models on Hoverfly →</a>
+        </div>
+      </details>
+    </div>
+    <div class="nav-links">
+      <a href="#live-demo">Live demo</a>
+      <a href="#screenshots">Screenshots</a>
+      <a href="#install">Install</a>
+      <a href="#usage">Usage</a>
+      <a href="#quality">Quality</a>
+      <a href="#ideas">Ideas</a>
+      <a href="#api">API</a>
+      <a href="#pricing">Pricing</a>
+      <a href="#faq">FAQ</a>
+    </div>
+    <a class="nav-cta" href="https://github.com/rajumark/retake">GitHub ↗</a>
+  </div>
+</nav>
+
+<header class="hero" id="top">
+  <div class="eyebrow">Retake · by <a href="https://rajumark.github.io/hoverfly/">Hoverfly</a></div>
+  <h1>Snap it.<br>Retake says keep or retake.</h1>
+  <p class="tagline">Check a photo the moment it's taken: blurry, too dark, too bright, glare, noisy, or a finger over the lens. On the device itself: Android, iOS, desktop and the web, from one Kotlin Multiplatform library.</p>
+  <div class="hero-actions">
+    <a class="btn btn-primary" href="#install">Get started</a>
+    <a class="btn btn-secondary" href="https://github.com/rajumark/retake">View source</a>
+  </div>
+  <p class="hero-trust">Free up to 10k monthly active devices · No API key · On Maven Central · Android, iOS, desktop, web</p>
+  <div class="rt-demo" id="heroDemo" aria-label="Retake checking example photos">
+    <div class="rt-photo"><img id="hdImg" src="examples/blur.jpg" alt=""><div class="rt-scan" id="hdScan"></div></div>
+    <div class="rt-side">
+      <div class="rt-verdict" id="hdVerdict">…</div>
+      <div class="rt-hint" id="hdHint"></div>
+      <div class="rt-rows" id="hdRows"><div class="rt-row" data-k="blur"><span>blur</span><span class="bar"><i></i></span><span class="v"></span></div><div class="rt-row" data-k="dark"><span>dark</span><span class="bar"><i></i></span><span class="v"></span></div><div class="rt-row" data-k="bright"><span>bright</span><span class="bar"><i></i></span><span class="v"></span></div><div class="rt-row" data-k="glare"><span>glare</span><span class="bar"><i></i></span><span class="v"></span></div><div class="rt-row" data-k="noise"><span>noise</span><span class="bar"><i></i></span><span class="v"></span></div><div class="rt-row" data-k="finger"><span>finger</span><span class="bar"><i></i></span><span class="v"></span></div></div>
+      <div class="rt-code">retake.check(pixels, width, height)</div>
+    </div>
+  </div>
+</header>
+
+<div class="live-band" id="live-demo" role="region" aria-labelledby="live-title">
+  <div class="live-inner">
+    <div class="section-head">
+      <div class="kicker">Live demo</div>
+      <h2 id="live-title">Check your own photo</h2>
+      <p>This is the actual Retake library, compiled to WebAssembly and running in your browser. Pick an example or drop in a photo of your own. It's checked on this device; the photo never leaves this page.</p>
+    </div>
+    <div class="live-card">
+      <div class="live-status" id="liveStatus" data-state="loading" role="status" aria-live="polite"><span class="dot" aria-hidden="true"></span><span id="liveStatusText">Loading the model (~0.8 MB)…</span></div>
+      <div class="rt-thumbs" id="ldThumbs"><button type="button" data-f="good" aria-pressed="false"><img src="examples/good.jpg" alt="" loading="lazy">Good</button><button type="button" data-f="blur" aria-pressed="false"><img src="examples/blur.jpg" alt="" loading="lazy">Blurry</button><button type="button" data-f="dark" aria-pressed="false"><img src="examples/dark.jpg" alt="" loading="lazy">Dark</button><button type="button" data-f="bright" aria-pressed="false"><img src="examples/bright.jpg" alt="" loading="lazy">Too bright</button><button type="button" data-f="glare" aria-pressed="true"><img src="examples/glare.jpg" alt="" loading="lazy">Glare</button><button type="button" data-f="noise" aria-pressed="false"><img src="examples/noise.jpg" alt="" loading="lazy">Noisy</button><button type="button" data-f="finger" aria-pressed="false"><img src="examples/finger.jpg" alt="" loading="lazy">Finger</button><button type="button" data-f="screenshot" aria-pressed="false"><img src="examples/screenshot.jpg" alt="" loading="lazy">Screenshot</button></div>
+      <label class="rt-drop" id="ldDrop"><input type="file" id="ldFile" accept="image/*" hidden>📷 Choose a photo or drop it here</label>
+      <div class="rt-live">
+        <div class="rt-photo"><img id="ldImg" src="examples/glare.jpg" alt="The photo being checked"></div>
+        <div class="rt-side">
+          <div class="rt-verdict" id="ldVerdict">…</div>
+          <div class="rt-hint" id="ldHint"></div>
+          <div class="rt-rows" id="ldRows"><div class="rt-row" data-k="blur"><span>blur</span><span class="bar"><i></i></span><span class="v"></span></div><div class="rt-row" data-k="dark"><span>dark</span><span class="bar"><i></i></span><span class="v"></span></div><div class="rt-row" data-k="bright"><span>bright</span><span class="bar"><i></i></span><span class="v"></span></div><div class="rt-row" data-k="glare"><span>glare</span><span class="bar"><i></i></span><span class="v"></span></div><div class="rt-row" data-k="noise"><span>noise</span><span class="bar"><i></i></span><span class="v"></span></div><div class="rt-row" data-k="finger"><span>finger</span><span class="bar"><i></i></span><span class="v"></span></div></div>
+        </div>
+      </div>
+      <div class="live-foot">
+        <div></div>
+        <div class="live-meta" id="liveMeta">Checked in your browser</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<section id="features">
+  <div class="section-head">
+    <div class="kicker">Why Retake</div>
+    <h2>Catch the bad photo before it's sent</h2>
+    <p>No server, no API key, no per-photo bill. A small Kotlin library that you can read, test and ship.</p>
+  </div>
+  <div class="grid">
+    <div class="card">
+      <span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg></span>
+      <h3>Six problems, one call</h3>
+      <p>Blur, too dark, too bright, glare, noise and a finger over the lens. A score from 0 to 1 for each, the verdict, and a short hint to show the user.</p>
+    </div>
+    <div class="card">
+      <span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="2.5" width="12" height="19" rx="2.5"/><path d="M10 18h4"/></svg></span>
+      <h3>Knows a screenshot</h3>
+      <p>Screenshots, chats, documents and graphics aren't camera photos, so they count as good. On a real phone it flagged 4% of the Screenshots folder, and none of 102 app screenshots in the tests.</p>
+    </div>
+    <div class="card">
+      <span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8.5 12 3 3 8.5v7L12 21l9-5.5v-7Z"/><path d="M3 8.5 12 14l9-5.5"/><path d="M12 14v7"/></svg></span>
+      <h3>No dependencies</h3>
+      <p>Pure Kotlin inference. There is no ONNX Runtime, TFLite, ML Kit or native code, and it runs on Android (minSdk 21), iOS, macOS, JVM desktop, JavaScript and WebAssembly, from Kotlin or Java.</p>
+    </div>
+    <div class="card">
+      <span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span>
+      <h3>Private &amp; offline</h3>
+      <p>The model ships inside the library on every platform. Photos never leave the device: no network calls, no permissions, no telemetry.</p>
+    </div>
+  </div>
+  <div class="stat-grid" style="margin-top: 40px;">
+    <div class="stat-card"><div class="stat-value">87%</div><div class="stat-label">Right on real photos</div><div class="stat-note">OpenCV rules: 53%</div></div>
+    <div class="stat-card"><div class="stat-value">0.5MB</div><div class="stat-label">On-device</div><div class="stat-note">int8 weights</div></div>
+    <div class="stat-card"><div class="stat-value">6</div><div class="stat-label">Problems</div><div class="stat-note">with a hint for each</div></div>
+    <div class="stat-card"><div class="stat-value">0</div><div class="stat-label">Dependencies</div><div class="stat-note">no native code</div></div>
+  </div>
+</section>
+
+<section id="screenshots">
+  <div class="section-head">
+    <div class="kicker">On device</div>
+    <h2>Real photos, real verdicts</h2>
+    <p>The sample app on an Android emulator. Every check runs on the device. These are not mockups.</p>
+  </div>
+  <div class="shots">
+    <div class="card shot"><img src="screenshots/1-blur.png" width="1080" height="2424" alt="Retake flags a blurry photo" loading="lazy"><div class="shot-caption"><h3>Blurry</h3><p>retake: blur 99%</p></div></div>
+    <div class="card shot"><img src="screenshots/3-glare.png" width="1080" height="2424" alt="Retake flags glare" loading="lazy"><div class="shot-caption"><h3>Glare</h3><p>retake: glare 95%</p></div></div>
+    <div class="card shot"><img src="screenshots/4-finger.png" width="1080" height="2424" alt="Retake flags a finger over the lens" loading="lazy"><div class="shot-caption"><h3>Finger</h3><p>retake: finger 100%</p></div></div>
+    <div class="card shot"><img src="screenshots/6-dark.png" width="1080" height="2424" alt="Retake flags a dark photo" loading="lazy"><div class="shot-caption"><h3>Dark</h3><p>retake: dark 99%</p></div></div>
+    <div class="card shot"><img src="screenshots/2-good.png" width="1080" height="2424" alt="Retake keeps a good photo" loading="lazy"><div class="shot-caption"><h3>Good</h3><p>keep it</p></div></div>
+    <div class="card shot"><img src="screenshots/5-screenshot.png" width="1080" height="2424" alt="Retake keeps a screenshot" loading="lazy"><div class="shot-caption"><h3>Screenshot</h3><p>not a camera photo: good</p></div></div>
+  </div>
+  <div class="section-head" style="margin-top: 48px;">
+    <h2>Same library on every platform</h2>
+    <p>The Kotlin Multiplatform sample app, built from the published artifacts, gives the same result on Android, iOS, desktop and the web.</p>
+  </div>
+  <div class="shots">
+    <div class="card shot"><img src="screenshots/kmp-android.png" width="1080" height="2424" alt="Retake sample on Android" loading="lazy"><div class="shot-caption"><h3>Android</h3><p>retake: blur 99%</p></div></div>
+    <div class="card shot"><img src="screenshots/kmp-ios.png" width="1206" height="2622" alt="Retake sample on iOS" loading="lazy"><div class="shot-caption"><h3>iOS</h3><p>retake: blur 99%</p></div></div>
+    <div class="card shot"><img src="screenshots/kmp-desktop.png" width="960" height="1900" alt="Retake sample on Desktop (JVM)" loading="lazy"><div class="shot-caption"><h3>Desktop (JVM)</h3><p>retake: blur 99%</p></div></div>
+    <div class="card shot"><img src="screenshots/kmp-web-wasm.png" width="900" height="720" alt="Retake sample on Web (Wasm)" loading="lazy"><div class="shot-caption"><h3>Web (Wasm)</h3><p>retake: blur 99%</p></div></div>
+  </div>
+</section>
+
+<section id="install">
+  <div class="section-head">
+    <div class="kicker">Install</div>
+    <h2>Add it to your build</h2>
+    <p>One line in your Gradle file, from Maven Central. Works in commonMain for Android, iOS, macOS, JVM desktop, JavaScript and WebAssembly. No API key, no account.</p>
+  </div>
+  <div class="code-block">
+    <div class="code-label">Maven Central <span class="tag-pill live">live</span></div>
+    <button class="copy-btn" type="button">Copy</button>
+    <pre><code class="language-kotlin">// build.gradle.kts: commonMain, or any platform source set
+dependencies {
+    implementation("io.github.rajumark:retake:1.0.0")
+}
+
+// Gradle picks the right artifact per platform:
+// retake-android · retake-jvm · retake-iosarm64 · retake-iossimulatorarm64
+// retake-macosarm64 · retake-js · retake-wasm-js</code></pre>
+  </div>
+  <div class="prompt-block">
+    <div class="code-label">Build with a prompt</div>
+    <div class="code-block">
+      <button class="copy-btn" type="button">Copy</button>
+      <pre><code>Add Retake from rajumark to this Kotlin Multiplatform or Android project.
+
+What it does: on-device photo quality check. Given a photo's pixels, it says whether the photo is good or should be retaken, with a 0..1 score for blur, dark, bright (over-exposed), glare, noise and finger (over the lens), plus a short hint per problem. Screenshots and graphics count as good. 0.5 MB, no dependencies, no network.
+
+Install (Maven Central, no extra repository):
+  build.gradle.kts (commonMain or any source set): implementation("io.github.rajumark:retake:1.0.0")
+  Platforms: Android, iOS, macOS, JVM desktop, JavaScript, WebAssembly
+
+Usage:
+  val retake = Retake()                              // off the main thread, keep one instance
+  val check = retake.check(argb, width, height)      // ARGB pixels; Android: retake.check(bitmap) or check(context, uri)
+  if (!check.isGood) show(check.issues.first().hint) // e.g. "Blurry: hold still and tap to focus"
+
+Repo: https://github.com/rajumark/retake#readme
+Add the dependency, then follow the README for the exact API and current version.</code></pre>
+    </div>
+  </div>
+</section>
+
+<section id="usage">
+  <div class="section-head">
+    <div class="kicker">Usage</div>
+    <h2>One call per photo</h2>
+    <p>Load once and reuse the instance. <code>check()</code> is thread-safe; run it on a background thread after a photo is taken or picked.</p>
+  </div>
+  <div class="two-col">
+    <div class="code-block">
+      <div class="code-label">Kotlin</div>
+      <button class="copy-btn" type="button">Copy</button>
+      <pre><code class="language-kotlin">val retake = Retake()
+
+val check = retake.check(argb, width, height)
+// PhotoCheck(retake: BLUR, blur=0.991, dark=0.012, ...)
+check.isGood               // false
+check.issues               // [BLUR]
+check.issues.first().hint  // "Blurry: hold still and tap to focus"
+
+// Android shortcuts
+retake.check(bitmap)
+retake.check(context, uri) // reduced-size decode + EXIF rotation</code></pre>
+    </div>
+    <div class="code-block">
+      <div class="code-label">Java</div>
+      <button class="copy-btn" type="button">Copy</button>
+      <pre><code class="language-java">try (Retake retake = new Retake()) {
+    PhotoCheck check = retake.check(argb, width, height);
+    if (!check.isGood()) {
+        String hint = check.getIssues().get(0).getHint();
+    }
+}</code></pre>
+    </div>
+  </div>
+</section>
+
+<section id="use-cases">
+  <div class="section-head">
+    <div class="kicker">Use cases</div>
+    <h2>Where Retake fits</h2>
+    <p>Anywhere a bad photo costs time, money or a second trip.</p>
+  </div>
+  <div class="usecase-list">
+    <div class="usecase">
+      <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="12" r="2.5"/><path d="M14 10h4M14 14h3"/></svg></div>
+      <div><h4>ID and KYC checks</h4><p>Ask for a retake on the phone before a blurry or glary ID photo is uploaded and rejected by a human a day later.</p><code class="example">glare 0.95 → "Tilt the card away from the light"</code></div>
+    </div>
+    <div class="usecase">
+      <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h9l4 4v14H6z"/><path d="M9 12h7M9 16h5"/></svg></div>
+      <div><h4>Document and receipt scanners</h4><p>Catch shaky, dark or glare-washed scans while the user is still holding the paper.</p><code class="example">blur 0.99 → retake</code></div>
+    </div>
+    <div class="usecase">
+      <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l1.5-5h15L21 9"/><path d="M4 9h16v11H4z"/><path d="M9 20v-6h6v6"/></svg></div>
+      <div><h4>Marketplace listings</h4><p>Better product photos sell faster: nudge sellers to retake dark or blurry pictures before they post.</p><code class="example">dark 0.99 → "Add light or turn on the flash"</code></div>
+    </div>
+    <div class="usecase">
+      <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg></div>
+      <div><h4>Gallery cleaners</h4><p>Find the blurry, dark and finger-covered shots in a camera roll so users can free space, without flagging screenshots.</p><code class="example">screenshot → good</code></div>
+    </div>
+  </div>
+</section>
+
+<section id="ideas">
+  <div class="section-head">
+    <div class="kicker">App ideas</div>
+    <h2>20 apps you could build with Retake</h2>
+    <p>Real problems Retake solves today. Pick one and ship it.</p>
+  </div>
+  <div class="idea-list">
+    <div class="idea"><span class="emo" aria-hidden="true">🪪</span><p><b>KYC capture</b> · Check ID card photos for blur and glare before upload, so verification passes the first time.</p></div>
+    <div class="idea"><span class="emo" aria-hidden="true">🧾</span><p><b>Expense receipts</b> · Make sure every receipt photo is sharp and readable before it reaches accounting.</p></div>
+    <div class="idea"><span class="emo" aria-hidden="true">📄</span><p><b>Document scanner</b> · Warn about shaky or glary pages while the user is still holding the paper.</p></div>
+    <div class="idea"><span class="emo" aria-hidden="true">🛍️</span><p><b>Seller listing helper</b> · Nudge marketplace sellers to retake dark or blurry product photos.</p></div>
+    <div class="idea"><span class="emo" aria-hidden="true">🚗</span><p><b>Insurance claims</b> · Accident and damage photos that are good enough to assess, the first time.</p></div>
+    <div class="idea"><span class="emo" aria-hidden="true">🏠</span><p><b>Property inspections</b> · Field agents get told on the spot when a room photo is too dark or blurred.</p></div>
+    <div class="idea"><span class="emo" aria-hidden="true">🗑️</span><p><b>Gallery cleaner</b> · Find blurry, dark and finger-covered shots to delete, without touching screenshots.</p></div>
+    <div class="idea"><span class="emo" aria-hidden="true">⭐</span><p><b>Best-shot picker</b> · From a burst, keep the sharpest, best-exposed photo automatically.</p></div>
+    <div class="idea"><span class="emo" aria-hidden="true">🤳</span><p><b>Profile photo check</b> · Dating and social apps ask for a retake before a blurry selfie becomes a profile picture.</p></div>
+    <div class="idea"><span class="emo" aria-hidden="true">📦</span><p><b>Proof of delivery</b> · Drivers can't submit a dark or shaky doorstep photo.</p></div>
+    <div class="idea"><span class="emo" aria-hidden="true">🩺</span><p><b>Telehealth photos</b> · Patients send skin or wound photos that a doctor can actually use.</p></div>
+    <div class="idea"><span class="emo" aria-hidden="true">🏫</span><p><b>Homework upload</b> · Students' photographed worksheets are readable before the teacher opens them.</p></div>
+    <div class="idea"><span class="emo" aria-hidden="true">🍽️</span><p><b>Menu and food apps</b> · Restaurants upload dish photos that look good, not grainy.</p></div>
+    <div class="idea"><span class="emo" aria-hidden="true">🔧</span><p><b>Field service reports</b> · Technicians' before/after photos are clear enough to prove the work.</p></div>
+    <div class="idea"><span class="emo" aria-hidden="true">🌱</span><p><b>Plant and crop apps</b> · Make sure a leaf photo is sharp before running a disease model on it.</p></div>
+    <div class="idea"><span class="emo" aria-hidden="true">🧑‍🦯</span><p><b>Accessibility camera</b> · Tell blind and low-vision users "too dark" or "your finger is on the lens".</p></div>
+    <div class="idea"><span class="emo" aria-hidden="true">📸</span><p><b>Camera app tips</b> · Show a gentle "hold still" or "too bright" tip right after the shutter.</p></div>
+    <div class="idea"><span class="emo" aria-hidden="true">☁️</span><p><b>Smart backup</b> · Skip uploading blurry duplicates and finger shots to save cloud storage.</p></div>
+    <div class="idea"><span class="emo" aria-hidden="true">🧑‍🏫</span><p><b>Photography lessons</b> · Explain what went wrong with each practice shot.</p></div>
+    <div class="idea"><span class="emo" aria-hidden="true">🔍</span><p><b>Pre-check for other models</b> · Run OCR, face or plant models only on photos good enough to give a reliable answer.</p></div>
+  </div>
+</section>
+
+<section id="quality">
+  <div class="section-head">
+    <div class="kicker">Quality</div>
+    <h2>Honest numbers</h2>
+    <p>Real phone photos from the LIVE In the Wild Challenge database, hand-labelled before the model was tested on them and scored once; plus 7,428 test photos with generated defects, never used for training.</p>
+  </div>
+  <table>
+    <thead><tr><th></th><th>Retake</th><th>OpenCV rules (Laplacian + histogram)</th><th>CLIP ViT-B/32 zero-shot</th></tr></thead>
+    <tbody>
+      <tr><td>Real photos: verdict right</td><td><b>86.6%</b></td><td>52.7%</td><td>19.4%</td></tr>
+      <tr><td>Real app screenshots wrongly flagged (102)</td><td><b>0</b></td><td>—</td><td>—</td></tr>
+      <tr><td>Generated defects: verdict right / issue F1</td><td><b>92.0% / 0.888</b></td><td>72.2% / 0.51</td><td>75.3% / 0.40</td></tr>
+      <tr><td>Real blur ranking (BID, 586 photos): AUC</td><td><b>0.862</b></td><td>0.837</td><td>0.789</td></tr>
+      <tr><td>Size</td><td><b>0.5 MB</b></td><td>—</td><td>~350 MB</td></tr>
+    </tbody>
+  </table>
+  <p class="table-note">The OpenCV rules and CLIP had their lines tuned on the validation set, to be fair to them. The rules can't detect a finger, and still flag about half of all good photos; CLIP flags almost every photo for something. In the pure-Kotlin library a 1040 × 780 photo takes about 90 ms on a laptop JVM and about 235 ms in a browser; an 800 px photo takes 110–150 ms in the Android sample on an emulator. Weak spots: real glare is caught less often than the other problems, and very dark night photos or deliberate motion blur can be flagged (raise the threshold to be lenient).</p>
+</section>
+
+<section id="api">
+  <div class="section-head">
+    <div class="kicker">Reference</div>
+    <h2>API at a glance</h2>
+  </div>
+  <table>
+    <thead><tr><th>Member</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr><td><code>Retake()</code></td><td>Loads the bundled model. Implements <code>AutoCloseable</code>.</td></tr>
+      <tr><td><code>check(argb, width, height, threshold = 0.5)</code></td><td>Checks ARGB pixels (any size; larger than 1024 px is shrunk first). Returns a <code>PhotoCheck</code>.</td></tr>
+      <tr><td><code>checkRgb(rgb, width, height, threshold = 0.5)</code></td><td>The same for RGB bytes, 3 per pixel.</td></tr>
+      <tr><td><code>PhotoCheck.isGood</code> · <code>issues</code> · <code>scores</code> · <code>score(issue)</code> · <code>strongest</code></td><td>The verdict, the problems found (most certain first), and every score from 0 to 1.</td></tr>
+      <tr><td><code>Issue</code></td><td><code>BLUR</code>, <code>DARK</code>, <code>BRIGHT</code>, <code>GLARE</code>, <code>NOISE</code>, <code>FINGER</code>, each with a short <code>hint</code>.</td></tr>
+      <tr><td><code>Retake.check(bitmap)</code> · <code>Retake.check(context, uri)</code></td><td>Android: an upright Bitmap, or a photo Uri decoded at reduced size and turned upright from its EXIF orientation.</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<section id="pricing">
+  <div class="section-head">
+    <div class="kicker">Pricing &amp; license</div>
+    <h2>Free until you're big.</h2>
+    <p>No API key, no sign-up, no license file. Add Retake to your project and ship. It stays free until your product passes 10,000 monthly active devices, and there's never a limit on how often each device runs it.</p>
+  </div>
+  <div class="price-grid">
+    <div class="price-card featured">
+      <span class="price-badge">Start here</span>
+      <div class="plan">Community</div>
+      <div class="price">Free</div>
+      <p class="price-sub">For indie developers, startups and growing apps, up to 10,000 monthly active devices.</p>
+      <ul>
+        <li>Commercial use allowed</li>
+        <li>No API key, account or license file</li>
+        <li>Unlimited calls on every device</li>
+        <li>Runs fully on-device, with no tracking or phoning home</li>
+      </ul>
+      <a class="btn btn-primary" href="#install">Get started</a>
+    </div>
+    <div class="price-card">
+      <div class="plan">Commercial</div>
+      <div class="price">Let's talk</div>
+      <p class="price-sub">For products above 10,000 monthly active devices on any platform.</p>
+      <ul>
+        <li>One license per product, per model</li>
+        <li>Pricing that fits your scale</li>
+        <li>Direct support from the people who built it</li>
+        <li>Early access to model updates</li>
+      </ul>
+      <div class="price-contact"><a class="btn btn-secondary" href="mailto:raju348636@gmail.com?subject=Retake%20commercial%20license">Email</a><a class="btn btn-secondary" href="https://wa.me/916353321951">WhatsApp</a><a class="btn btn-secondary" href="tel:+916353321951">Call</a></div>
+    </div>
+    <div class="price-card">
+      <div class="plan">Custom models</div>
+      <div class="price">Built for you</div>
+      <p class="price-sub">A small, fast on-device model trained for your language, domain or task.</p>
+      <ul>
+        <li>Image quality, document and ID checks, moderation, classification and more</li>
+        <li>Tuned on your use case and your users' languages</li>
+        <li>Shipped as a plain Kotlin library, like Retake</li>
+        <li>Private: your model runs on your users' devices</li>
+      </ul>
+      <div class="price-contact"><a class="btn btn-secondary" href="mailto:raju348636@gmail.com?subject=Custom%20model">Email</a><a class="btn btn-secondary" href="https://wa.me/916353321951">WhatsApp</a><a class="btn btn-secondary" href="tel:+916353321951">Call</a></div>
+    </div>
+  </div>
+  <div class="price-rules">
+    <div>
+      <h3>How devices are counted</h3>
+      <p>A monthly active device is a phone, tablet or other device that runs Retake at least once in a calendar month.</p>
+      <p>The 10,000 limit applies separately to each product, each platform (Android, iOS, web…) and each Hoverfly model. Crossed it? You have 30 days to get a commercial license.</p>
+    </div>
+    <div>
+      <h3>What the license does not allow</h3>
+      <ul>
+        <li>Selling or redistributing Retake or its model on its own, or inside another SDK</li>
+        <li>Extracting, modifying or fine-tuning the model weights</li>
+        <li>Using the model or its outputs to train or distill another model</li>
+        <li>Reverse engineering the model or its file format</li>
+        <li>Offering it as a hosted API for others</li>
+      </ul>
+    </div>
+  </div>
+  <p class="price-foot">Questions about licensing? Email <a href="mailto:raju348636@gmail.com">raju348636@gmail.com</a> or call / WhatsApp <a class="nowrap" href="tel:+916353321951">+91 63533 21951</a>. Full terms: <a href="https://github.com/rajumark/retake/blob/main/LICENSE">Hoverfly Community License</a>.</p>
+</section>
+
+
+
+
+
+
+<section id="faq">
+  <div class="section-head">
+    <div class="kicker">FAQ</div>
+    <h2>Questions</h2>
+  </div>
+  <div class="faq-item"><h4>What is Retake?</h4><p>A Kotlin Multiplatform library (Android, iOS, macOS, JVM desktop, JavaScript, WebAssembly) that checks a photo on the device and says whether it's good or should be retaken, and why.</p></div>
+  <div class="faq-item"><h4>Which problems does it find?</h4><p>Blur (out of focus, motion, hand shake), too dark, too bright (blown out), glare and reflections, heavy noise, and a finger or object covering part of the lens. Each gets a score from 0 to 1; 0.5 is the default line.</p></div>
+  <div class="faq-item"><h4>What about screenshots and graphics?</h4><p>They count as good: a dark-mode screen isn't an under-exposed photo. Retake was trained with generated screenshots, chats, documents and posters for exactly this, and flags none of 102 real app screenshots.</p></div>
+  <div class="faq-item"><h4>How fast is it?</h4><p>About 90 ms per photo on a laptop JVM, 110–150 ms in the Android sample on an emulator and about 235 ms in a browser, including the shrink to 1024 px. It's meant for checking a photo after it's taken, on a background thread. On Android, <code>check(context, uri)</code> decodes big photos at reduced size, which saves most of the decode time.</p></div>
+  <div class="faq-item"><h4>Is the Kotlin port exact?</h4><p>The tests compare it with the reference (OpenCV preprocessing + the same int8 weights in PyTorch) on 13 images on every target: the same 4 detail crops, and every score within 0.00023.</p></div>
+  <div class="faq-item"><h4>How much does Retake cost?</h4><p>Nothing for products with up to 10,000 monthly active devices per platform, including commercial apps. There is no API key or account, and no limit on how often it runs. Above that, a commercial license is needed; see <a href="#pricing">Pricing</a>.</p></div>
+  <div class="faq-item"><h4>Can you build a model for my app?</h4><p>Yes. Hoverfly trains custom on-device models for your task and ships them as a small library like this one. Email <a href="mailto:raju348636@gmail.com">raju348636@gmail.com</a> or call / WhatsApp +91 63533 21951.</p></div>
+</section>
+
+<section id="creator" aria-label="A note from the creator">
+  <a class="creator-card" href="https://rajumark.github.io/">
+    <div class="creator-kicker"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 21s-7.5-4.6-9.6-9.2C.9 8.4 3 4.5 6.7 4.5c2.1 0 3.6 1.1 4.3 2.4.7-1.3 2.2-2.4 4.3-2.4 3.7 0 5.8 3.9 4.3 7.3C19.5 16.4 12 21 12 21z"/></svg> A note from the creator</div>
+    <p class="creator-quote">Built by a developer, <mark>for developers.</mark></p>
+    <p class="creator-sub">Every model here started as a problem I hit in my own apps. I made them small, private and free to start, so you can spend your time on the part your users will love.</p>
+    <div class="creator-sign">
+      <img src="https://rajumark.github.io/raju_profile_small_image.png" alt="" width="52" height="52" loading="lazy">
+      <div><b>Raju Shingadiya</b><small>Android developer · creator of Hoverfly</small></div>
+      <span class="creator-go">Meet the maker <span aria-hidden="true">→</span></span>
+    </div>
+  </a>
+</section>
+
+<section id="all-models">
+  <div class="section-head">
+    <div class="kicker">The Hoverfly family</div>
+    <h2>Retake is one of nine.</h2>
+    <p>Nine small on-device models, one job each. Same install, same free tier, and the same promise: nothing leaves the device.</p>
+  </div>
+  <div class="model-grid">
+    <a class="model-tile" href="https://rajumark.github.io/moji/"><span class="emo" aria-hidden="true">🙂</span><span><b>Moji</b><span class="job">Emoji suggestions</span><span class="what">The right emoji for any message, in 22 languages.</span></span></a>
+    <a class="model-tile" href="https://rajumark.github.io/beacon/"><span class="emo" aria-hidden="true">🗼</span><span><b>Beacon</b><span class="job">Language detection</span><span class="what">Language and script of any text, Hinglish included.</span></span></a>
+    <a class="model-tile" href="https://rajumark.github.io/comma/"><span class="emo" aria-hidden="true">✍️</span><span><b>Comma</b><span class="job">Punctuation</span><span class="what">Turns voice-typed text into readable sentences.</span></span></a>
+    <a class="model-tile" href="https://rajumark.github.io/comeback/"><span class="emo" aria-hidden="true">💬</span><span><b>Comeback</b><span class="job">Smart replies</span><span class="what">Three tap-to-send replies for every message.</span></span></a>
+    <a class="model-tile" href="https://rajumark.github.io/emotion/"><span class="emo" aria-hidden="true">😊</span><span><b>Emotion</b><span class="job">Emotion detection</span><span class="what">28 emotions and an overall mood, per message.</span></span></a>
+    <a class="model-tile" href="https://rajumark.github.io/gatekeeper/"><span class="emo" aria-hidden="true">🛡️</span><span><b>Gatekeeper</b><span class="job">Toxicity detection</span><span class="what">Catches abuse and threats in Indian chat.</span></span></a>
+    <a class="model-tile" href="https://rajumark.github.io/hideout/"><span class="emo" aria-hidden="true">🏚️</span><span><b>Hideout</b><span class="job">Personal info hiding</span><span class="what">Hides phones, UPI, Aadhaar and more.</span></span></a>
+    <a class="model-tile" href="https://rajumark.github.io/chalk/"><span class="emo" aria-hidden="true">🖍️</span><span><b>Chalk</b><span class="job">Doodle recognition</span><span class="what">Guesses 345 things from pen strokes, live.</span></span></a>
+    <div class="model-tile is-here" aria-current="page"><span class="emo" aria-hidden="true">📸</span><span><b>Retake</b><span class="job">Photo quality check</span><span class="what">Blur, dark, glare, a finger: retake or keep?</span></span><span class="here">You're here</span></div>
+  </div>
+  <div class="all-models-cta">
+    <a class="btn btn-primary" href="https://rajumark.github.io/hoverfly/#models"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg> View all models</a>
+    <a class="btn btn-secondary" href="https://rajumark.github.io/hoverfly/">Hoverfly home</a>
+  </div>
+</section>
+
+<footer>
+  <div class="foot-links">
+    <a href="https://rajumark.github.io/hoverfly/#models">All models</a>
+    <a href="https://github.com/rajumark/retake">GitHub</a>
+    <a href="https://github.com/rajumark/retake/blob/main/LICENSE">License</a>
+    <a href="https://rajumark.github.io/moji/">Moji</a>
+    <a href="https://rajumark.github.io/beacon/">Beacon</a>
+    <a href="https://rajumark.github.io/comma/">Comma</a>
+    <a href="https://rajumark.github.io/comeback/">Comeback</a>
+    <a href="https://rajumark.github.io/emotion/">Emotion</a>
+    <a href="https://rajumark.github.io/gatekeeper/">Gatekeeper</a>
+    <a href="https://rajumark.github.io/hideout/">Hideout</a>
+    <a href="https://rajumark.github.io/chalk/">Chalk</a>
+    <a href="https://rajumark.github.io/">Creator</a>
+  </div>
+  <div class="copyright">© 2026 Hoverfly · Retake · trained on photos from Open Images (CC BY 2.0) and Unsplash · example photos from Unsplash</div>
+</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/kotlin.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/java.min.js"></script>
+<script>
+  if (window.hljs) { document.querySelectorAll('pre code[class*="language-"]').forEach(function (b) { hljs.highlightElement(b); }); }
+</script>
+
+<script>
+  document.querySelectorAll(".copy-btn").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      var code = btn.closest(".code-block").querySelector("pre code");
+      if (!code) return;
+      navigator.clipboard.writeText(code.textContent).then(function () {
+        var original = btn.textContent;
+        btn.textContent = "Copied";
+        btn.classList.add("copied");
+        window.setTimeout(function () {
+          btn.textContent = original;
+          btn.classList.remove("copied");
+        }, 1500);
+      });
+    });
+  });
+</script>
+
+<script>
+// Screenshot strips: prev/next buttons when they overflow, and a full-screen viewer on click
+(() => {
+  const arrow = d => `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="${d}"/></svg>`;
+  const LEFT = arrow('M15 18l-6-6 6-6'), RIGHT = arrow('M9 18l6-6-6-6'), CLOSE = arrow('M18 6L6 18M6 6l12 12');
+
+  document.querySelectorAll('.shots').forEach(strip => {
+    const nav = document.createElement('div');
+    nav.className = 'shots-nav';
+    nav.innerHTML = `<button type="button" aria-label="Previous screenshots">${LEFT}</button><button type="button" aria-label="More screenshots">${RIGHT}</button>`;
+    strip.after(nav);
+    const [prev, next] = nav.querySelectorAll('button');
+    const update = () => {
+      const max = strip.scrollWidth - strip.clientWidth;
+      nav.hidden = max < 4;
+      prev.disabled = strip.scrollLeft <= 2;
+      next.disabled = strip.scrollLeft >= max - 2;
+    };
+    prev.onclick = () => strip.scrollBy({ left: -strip.clientWidth * 0.8, behavior: 'smooth' });
+    next.onclick = () => strip.scrollBy({ left: strip.clientWidth * 0.8, behavior: 'smooth' });
+    strip.addEventListener('scroll', update, { passive: true });
+    new ResizeObserver(update).observe(strip);
+    strip.querySelectorAll('img').forEach(img => img.addEventListener('load', update));
+    update();
+  });
+
+  const box = document.createElement('dialog');
+  box.className = 'lightbox';
+  box.setAttribute('aria-label', 'Screenshot');
+  box.innerHTML = `<figure><img alt=""><figcaption></figcaption></figure>
+    <button type="button" class="lb-btn lb-prev" aria-label="Previous screenshot">${LEFT}</button>
+    <button type="button" class="lb-btn lb-next" aria-label="Next screenshot">${RIGHT}</button>
+    <button type="button" class="lb-btn lb-close" aria-label="Close">${CLOSE}</button>`;
+  document.body.appendChild(box);
+  const big = box.querySelector('img'), cap = box.querySelector('figcaption');
+  const prevBtn = box.querySelector('.lb-prev'), nextBtn = box.querySelector('.lb-next');
+  let group = [], index = 0;
+
+  const show = i => {
+    index = (i + group.length) % group.length;
+    const img = group[index], card = img.closest('.shot');
+    const title = card.querySelector('h3')?.textContent || '', text = card.querySelector('p')?.textContent || '';
+    big.src = img.currentSrc || img.src;
+    big.alt = img.alt;
+    cap.innerHTML = '';
+    if (title) cap.append(Object.assign(document.createElement('b'), { textContent: title }));
+    cap.append(text);
+    prevBtn.hidden = nextBtn.hidden = group.length < 2;
+  };
+  const open = img => {
+    group = [...img.closest('.shots').querySelectorAll('.shot img')];
+    show(group.indexOf(img));
+    document.documentElement.style.overflow = 'hidden';
+    box.showModal();
+    box.querySelector('.lb-close').focus();
+  };
+
+  document.querySelectorAll('.shot img').forEach(img => {
+    img.tabIndex = 0;
+    img.setAttribute('role', 'button');
+    img.addEventListener('click', () => open(img));
+    img.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(img); } });
+  });
+  box.querySelector('.lb-close').onclick = () => box.close();
+  prevBtn.onclick = () => show(index - 1);
+  nextBtn.onclick = () => show(index + 1);
+  box.addEventListener('click', e => { if (e.target === box || e.target.tagName === 'FIGURE') box.close(); });
+  box.addEventListener('keydown', e => {
+    if (e.key === 'ArrowLeft') show(index - 1);
+    if (e.key === 'ArrowRight') show(index + 1);
+  });
+  box.addEventListener('close', () => {
+    document.documentElement.style.overflow = '';
+    group[index]?.focus({ preventScroll: true });
+  });
+})();
+</script>
+<script>
+// Model switcher: close on outside click, on Escape, and after choosing.
+(function () {
+  var sw = document.querySelector('.nav-switch');
+  if (!sw) return;
+  document.addEventListener('click', function (e) { if (sw.open && !sw.contains(e.target)) sw.open = false; });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && sw.open) { sw.open = false; sw.querySelector('summary').focus(); }
+  });
+})();
+</script>
+
+
+<script>
+  // Hero: cycles through the example photos with the shipped model's real scores for each.
+  (function () {
+    var EX = [{"f": "blur", "t": "Blurry", "s": [0.993, 0.012, 0.002, 0.0, 0.0, 0.0]}, {"f": "good", "t": "Good", "s": [0.019, 0.014, 0.003, 0.092, 0.003, 0.003]}, {"f": "glare", "t": "Glare", "s": [0.142, 0.002, 0.01, 0.95, 0.079, 0.241]}, {"f": "dark", "t": "Dark", "s": [0.01, 0.991, 0.0, 0.027, 0.0, 0.031]}, {"f": "finger", "t": "Finger", "s": [0.068, 0.043, 0.002, 0.004, 0.0, 0.994]}, {"f": "bright", "t": "Too bright", "s": [0.106, 0.002, 0.858, 0.092, 0.014, 0.014]}, {"f": "noise", "t": "Noisy", "s": [0.016, 0.092, 0.004, 0.0, 0.994, 0.019]}, {"f": "screenshot", "t": "Screenshot", "s": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]}], ORDER = ["blur", "dark", "bright", "glare", "noise", "finger"], HINT = {"blur": "Blurry: hold still and tap to focus", "dark": "Too dark: add light or turn on the flash", "bright": "Too bright: avoid direct light behind or on the subject", "glare": "Glare: tilt the camera or move away from the light", "noise": "Grainy: add light so the camera needs less boost", "finger": "Something covers the lens: move your finger away"};
+    var box = document.getElementById("heroDemo"), img = document.getElementById("hdImg"), scan = document.getElementById("hdScan");
+    var verdict = document.getElementById("hdVerdict"), hint = document.getElementById("hdHint");
+    var rows = document.querySelectorAll("#hdRows .rt-row");
+    function show(e) {
+      var hit = ORDER.filter(function (k, i) { return e.s[i] >= 0.5; });
+      verdict.className = "rt-verdict " + (hit.length ? "bad" : "good");
+      verdict.textContent = hit.length ? "Retake: " + hit.join(", ") : "\u2713 Keep it";
+      hint.textContent = hit.length ? HINT[hit[0]] : (e.f === "screenshot" ? "A screenshot, not a camera photo" : "Sharp, well exposed, nothing in the way");
+      rows.forEach(function (r, i) {
+        var v = e.s[i]; r.classList.toggle("hit", v >= 0.5);
+        r.querySelector("i").style.width = Math.max(1, v * 100).toFixed(1) + "%";
+        r.querySelector(".v").textContent = Math.round(v * 100) + "%";
+      });
+    }
+    var k = 0;
+    function next() {
+      var e = EX[k % EX.length]; k++;
+      box.classList.add("is-fading");
+      setTimeout(function () {
+        img.src = "examples/" + e.f + ".jpg";
+        rows.forEach(function (r) { r.querySelector("i").style.width = "0"; r.querySelector(".v").textContent = ""; r.classList.remove("hit"); });
+        verdict.textContent = "Checking\u2026"; verdict.className = "rt-verdict"; hint.textContent = "";
+        box.classList.remove("is-fading");
+        scan.classList.remove("is-on"); void scan.offsetWidth; scan.classList.add("is-on");
+        setTimeout(function () { show(e); }, 1000);
+        setTimeout(next, 3800);
+      }, 350);
+    }
+    if (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) show(EX[0]); else next();
+  })();
+</script>
+<a class="live-toast is-hidden" id="liveToast" href="#live-demo"><span class="dot" aria-hidden="true"></span><span id="liveToastText">Loading the live demo model…</span></a>
+<script>
+  // Live demo: the photo is drawn at <= 1024 px and its pixels go to the real library (Kotlin/Wasm) in a Web Worker.
+  var LD_HINT = {"blur": "Blurry: hold still and tap to focus", "dark": "Too dark: add light or turn on the flash", "bright": "Too bright: avoid direct light behind or on the subject", "glare": "Glare: tilt the camera or move away from the light", "noise": "Grainy: add light so the camera needs less boost", "finger": "Something covers the lens: move your finger away"}, LD_ORDER = ["blur", "dark", "bright", "glare", "noise", "finger"];
+  var ldImg = document.getElementById("ldImg"), ldCanvas = document.createElement("canvas");
+  function liveInput() {
+    var s = Math.min(1, 1024 / Math.max(ldImg.naturalWidth, ldImg.naturalHeight));
+    var w = Math.max(1, Math.round(ldImg.naturalWidth * s)), h = Math.max(1, Math.round(ldImg.naturalHeight * s));
+    ldCanvas.width = w; ldCanvas.height = h;
+    var g = ldCanvas.getContext("2d"); g.imageSmoothingQuality = "high"; g.drawImage(ldImg, 0, 0, w, h);
+    var d = g.getImageData(0, 0, w, h).data, parts = [];
+    for (var i = 0; i < d.length; i += 32768) parts.push(String.fromCharCode.apply(null, d.subarray(i, i + 32768)));
+    return [parts.join(""), w + "," + h + ",0.5"];
+  }
+  function liveSkeleton() {}
+  function liveRender(r) {
+    var v = document.getElementById("ldVerdict");
+    v.className = "rt-verdict " + (r.good ? "good" : "bad");
+    v.textContent = r.good ? "\u2713 Keep it" : "Retake: " + r.issues.join(", ");
+    document.getElementById("ldHint").textContent = r.good ? "No problem found" : r.hints[0];
+    document.querySelectorAll("#ldRows .rt-row").forEach(function (row) {
+      var k = row.getAttribute("data-k"), x = r.scores[k];
+      row.classList.toggle("hit", x >= 0.5);
+      row.querySelector("i").style.width = Math.max(1, x * 100).toFixed(1) + "%";
+      row.querySelector(".v").textContent = Math.round(x * 100) + "%";
+    });
+  }
+  function ldPick(src, btn) {
+    document.querySelectorAll("#ldThumbs button").forEach(function (b) { b.setAttribute("aria-pressed", b === btn ? "true" : "false"); });
+    document.getElementById("ldVerdict").textContent = "Checking\u2026"; document.getElementById("ldVerdict").className = "rt-verdict";
+    ldImg.src = src;
+  }
+  ldImg.addEventListener("load", function () { Live.run(); });
+  document.getElementById("ldThumbs").addEventListener("click", function (e) {
+    var b = e.target.closest("button"); if (b) ldPick("examples/" + b.getAttribute("data-f") + ".jpg", b);
+  });
+  var ldDrop = document.getElementById("ldDrop"), ldFile = document.getElementById("ldFile");
+  function ldUse(f) { if (f && f.type.indexOf("image") === 0) ldPick(URL.createObjectURL(f), null); }
+  ldFile.addEventListener("change", function () { ldUse(ldFile.files[0]); });
+  ["dragover", "dragenter"].forEach(function (t) { ldDrop.addEventListener(t, function (e) { e.preventDefault(); ldDrop.classList.add("is-over"); }); });
+  ["dragleave", "drop"].forEach(function (t) { ldDrop.addEventListener(t, function () { ldDrop.classList.remove("is-over"); }); });
+  ldDrop.addEventListener("drop", function (e) { e.preventDefault(); ldUse(e.dataTransfer.files[0]); });
+  // Live demo: the page loads first, then the model loads quietly in a Web Worker (demo/worker.js).
+  var Live = (function () {
+    var status = document.getElementById("liveStatus"), statusText = document.getElementById("liveStatusText");
+    var meta = document.getElementById("liveMeta");
+    var toast = document.getElementById("liveToast"), toastText = document.getElementById("liveToastText");
+    var worker = null, ready = false, nextId = 0, lastId = -1, t0 = 0;
+
+    function fmtMs(ms) { return ms < 1 ? ms.toFixed(2) + " ms" : ms < 10 ? ms.toFixed(1) + " ms" : Math.round(ms) + " ms"; }
+    function setStatus(state, text) { status.setAttribute("data-state", state); statusText.textContent = text; }
+
+    function run() {
+      if (!ready) return;
+      if (!ldImg.complete || !ldImg.naturalWidth) return;
+      var a = liveInput();
+      lastId = nextId++;
+      worker.postMessage({ id: lastId, input: a[0], option: a[1] || "" });
+    }
+
+    function fail(message) {
+      setStatus("error", "The live demo can't run in this browser. It needs WebAssembly GC (Chrome 119+, Firefox 120+, Safari 18.2+).");
+      toast.classList.add("is-hidden");
+      if (message && window.console) console.warn("Live demo:", message);
+    }
+
+    function start() {
+      if (worker) return;
+      if (typeof Worker === "undefined" || typeof WebAssembly === "undefined") return fail("no Worker/WebAssembly");
+      toast.classList.remove("is-hidden");
+      t0 = performance.now();
+      try { worker = new Worker("demo/worker.js", { type: "module" }); } catch (e) { return fail(e.message); }
+      worker.onerror = function (e) { fail(e.message); };
+      worker.onmessage = function (e) {
+        var d = e.data;
+        if (d.type === "ready") {
+          ready = true;
+          setStatus("ready", "Model ready · loaded in " + ((performance.now() - t0) / 1000).toFixed(1) + " s · running in your browser");
+          toast.classList.add("is-ready");
+          toastText.textContent = "Live demo ready · try it →";
+          setTimeout(function () { toast.classList.add("is-hidden"); }, 4000);
+          run();
+        } else if (d.type === "error") {
+          fail(d.message);
+        } else if (d.type === "result" && d.id === lastId) {
+          liveRender(d.data);
+          meta.textContent = "Checked in " + fmtMs(d.ms) + " · on this device, nothing sent";
+        }
+      };
+    }
+
+    toast.addEventListener("click", function () { setTimeout(function () { toast.classList.add("is-hidden"); }, 600); });
+    liveSkeleton();
+    // Never compete with the page itself: wait for load, then an idle moment.
+    function later() { (window.requestIdleCallback || function (f) { setTimeout(f, 300); })(start, { timeout: 2000 }); }
+    if (document.readyState === "complete") later(); else window.addEventListener("load", later);
+    return { run: run };
+  })();
+</script>
+</body>
+</html>

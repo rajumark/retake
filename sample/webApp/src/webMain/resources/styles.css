@@ -1,0 +1,29 @@
+:root { --bg: #f8f9f5; --card: #ffffff; --text: #1b1b21; --muted: #5d5e67; --line: #d5d8cf; --accent: #5c940d; --bad: #c92a2a; --track: #e9ecef; }
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--text); font: 16px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+main { max-width: 560px; margin: 0 auto; padding: 24px 16px 48px; }
+h1 { font-size: 34px; font-weight: 600; margin: 0; }
+.muted { color: var(--muted); margin: 4px 0 16px; }
+.small { font-size: 13px; margin: 8px 0 0; }
+.thumbs { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+.thumb { border: 0; padding: 0; background: none; cursor: pointer; font: inherit; font-size: 12px; color: var(--text); display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.thumb img { width: 68px; height: 68px; object-fit: cover; border-radius: 10px; border: 3px solid transparent; }
+.thumb.sel img { border-color: var(--accent); }
+.chip { font: inherit; font-size: 14px; padding: 6px 14px; border: 1px solid var(--line); border-radius: 8px; background: var(--card); cursor: pointer; display: inline-block; margin-bottom: 16px; }
+#photo { width: 100%; max-height: 360px; object-fit: contain; border-radius: 14px; background: #fff; display: block; }
+.card { background: var(--card); border-radius: 18px; padding: 16px 20px; margin-top: 16px; }
+.verdict { font-size: 22px; font-weight: 600; }
+.verdict.good { color: var(--accent); }
+.verdict.bad { color: var(--bad); }
+.hint { font-size: 14px; margin: 2px 0; }
+.bar { display: flex; align-items: center; gap: 10px; padding: 3px 0; font-size: 14px; }
+.bar .name { width: 56px; }
+.track { flex: 1; height: 10px; background: var(--track); border-radius: 5px; overflow: hidden; }
+.fill { height: 10px; background: #adb5bd; }
+.fill.hit { background: var(--bad); }
+.pct { width: 40px; text-align: right; color: var(--muted); font-variant-numeric: tabular-nums; }
+@media (min-width: 760px) {
+    main { max-width: 900px; }
+    .layout { display: grid; grid-template-columns: 1fr 360px; gap: 16px; align-items: start; }
+    .layout .card { margin-top: 0; }
+}

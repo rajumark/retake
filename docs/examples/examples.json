@@ -1,0 +1,90 @@
+{
+ "good": {
+  "source": "GyALQFQ9cp4.jpg",
+  "scores": {
+   "blur": 0.019,
+   "dark": 0.014,
+   "bright": 0.003,
+   "glare": 0.092,
+   "noise": 0.003,
+   "finger": 0.003
+  }
+ },
+ "blur": {
+  "source": "uA2Yv2h6TSU.jpg",
+  "scores": {
+   "blur": 0.993,
+   "dark": 0.012,
+   "bright": 0.002,
+   "glare": 0.0,
+   "noise": 0.0,
+   "finger": 0.0
+  }
+ },
+ "dark": {
+  "source": "tPkjdSjUbBw.jpg",
+  "scores": {
+   "blur": 0.01,
+   "dark": 0.991,
+   "bright": 0.0,
+   "glare": 0.027,
+   "noise": 0.0,
+   "finger": 0.031
+  }
+ },
+ "bright": {
+  "source": "WCUkHeiWo30.jpg",
+  "scores": {
+   "blur": 0.106,
+   "dark": 0.002,
+   "bright": 0.858,
+   "glare": 0.092,
+   "noise": 0.014,
+   "finger": 0.014
+  }
+ },
+ "glare": {
+  "source": "B60t4HvxznY.jpg",
+  "scores": {
+   "blur": 0.142,
+   "dark": 0.002,
+   "bright": 0.01,
+   "glare": 0.95,
+   "noise": 0.079,
+   "finger": 0.241
+  }
+ },
+ "noise": {
+  "source": "aiLEdIkIuvM.jpg",
+  "scores": {
+   "blur": 0.016,
+   "dark": 0.092,
+   "bright": 0.004,
+   "glare": 0.0,
+   "noise": 0.994,
+   "finger": 0.019
+  }
+ },
+ "finger": {
+  "source": "9x54LzhThH8.jpg",
+  "scores": {
+   "blur": 0.068,
+   "dark": 0.043,
+   "bright": 0.002,
+   "glare": 0.004,
+   "noise": 0.0,
+   "finger": 0.994
+  }
+ },
+ "screenshot": {
+  "source": "generated",
+  "scores": {
+   "blur": 0.0,
+   "dark": 0.0,
+   "bright": 0.0,
+   "glare": 0.0,
+   "noise": 0.0,
+   "finger": 0.0
+  }
+ }
+}
